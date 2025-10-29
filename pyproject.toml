@@ -12,4 +12,5 @@ dependencies = [
     "pydantic>=2.12.3",
     "rich>=14.2.0",
     "sqlmodel>=0.0.27",
+    "ua-generator>=2.0.17",
 ]

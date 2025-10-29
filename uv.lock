@@ -436,6 +436,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "rich" },
     { name = "sqlmodel" },
+    { name = "ua-generator" },
 ]
 
 [package.metadata]
@@ -447,6 +448,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.12.3" },
     { name = "rich", specifier = ">=14.2.0" },
     { name = "sqlmodel", specifier = ">=0.0.27" },
+    { name = "ua-generator", specifier = ">=2.0.17" },
 ]
 
 [[package]]
@@ -468,6 +470,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/55/e3/70399cb7dd41c10ac53367ae42139cf4b1ca5f36bb3dc6c9d33acdb43655/typing_inspection-0.4.2.tar.gz", hash = "sha256:ba561c48a67c5958007083d386c3295464928b01faa735ab8547c5692e87f464", size = 75949, upload-time = "2025-10-01T02:14:41.687Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/dc/9b/47798a6c91d8bdb567fe2698fe81e0c6b7cb7ef4d13da4114b41d239f65d/typing_inspection-0.4.2-py3-none-any.whl", hash = "sha256:4ed1cacbdc298c220f1bd249ed5287caa16f34d44ef4e9c3d0cbad5b521545e7", size = 14611, upload-time = "2025-10-01T02:14:40.154Z" },
+]
+
+[[package]]
+name = "ua-generator"
+version = "2.0.17"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/96/ad/8e5532b3543fcc0d522ef024aff4382480d8d38efdfe89f9f21992ac5790/ua_generator-2.0.17.tar.gz", hash = "sha256:a65463235cbe13bb043c14eb525b22b301b81a9c0a48b892c4201b7da1339362", size = 28290, upload-time = "2025-10-17T08:34:37.765Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8f/2f/a8ed3139fe099c2bc5477f554437ffba1c03efd4a0af93c85fb37fe7a6d3/ua_generator-2.0.17-py3-none-any.whl", hash = "sha256:5d4b4e244d8b8d64b5b88a5d67fe93a26ef92fd868110a186757bb3d80ebce8b", size = 32362, upload-time = "2025-10-17T08:34:36.251Z" },
 ]
 
 [[package]]
