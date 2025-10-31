@@ -16,7 +16,7 @@ class Crawler(ABC):
         self.user_agent = ua_generator.generate()
         headers = {**self.user_agent.headers}
         self.client = AsyncClient(headers=headers, proxies={"http://": self.proxy.value, "https://": self.proxy.value})
-    
+
     @abstractmethod
-    def query(self, url: str) -> Any:
+    async def query(self, url: str) -> Any:
         pass
