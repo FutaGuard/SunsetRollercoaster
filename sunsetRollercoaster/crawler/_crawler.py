@@ -15,21 +15,28 @@ class Crawler(ABC):
     def __init__(self, proxy: Proxy = Proxy.JP):
         self.proxy = proxy
         self.user_agent = ua_generator.generate()
-        headers = {**self.user_agent.headers}
-
+        # todo 這邊不知道為什麼出錯
+        # headers = {**self.user_agent.headers}
+        headers=''
         ctx = truststore.SSLContext()
         self.client = AsyncClient(
             headers=headers,
-            proxies={"http://": self.proxy.value, "https://": self.proxy.value},
+            # proxies={"http://": self.proxy.value, "https://": self.proxy.value},
             timeout=30,
             follow_redirects=True,
             http2=True,
-            transport= AsyncHTTPTransport(retries=3, verify=ctx),
+            transport= AsyncHTTPTransport(retries=3, verify=ctx,proxy=self.proxy.value),
         )
 
     async def close(self) -> None:
         if hasattr(self, 'client') and self.client:
             await self.client.aclose()
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+
     @abstractmethod
     async def query(self, url: str) -> Any:
         pass
