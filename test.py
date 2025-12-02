@@ -8,8 +8,7 @@ async def main():
         ret = await crawler.client.get("https://www.solarbus.com.tw")
         print(ret.text)
 
-        ret = await crawler.download_file_stream_async("http://http.speed.hinet.net/test_020m11.zip","test.zip")
-        print(ret)
+        ret = await crawler.download_file_stream_async("http://http.speed.hinet.net/test_020m.zip","test.zip")
 
     await crawler.close()
 
