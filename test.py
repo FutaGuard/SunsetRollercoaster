@@ -1,16 +1,13 @@
-from sunsetRollercoaster.crawler.invoice import InvoiceCrawler,Proxy
 import asyncio
 
+from sunsetRollercoaster.component.mvdis import car_check
+
 async def main():
-    async with InvoiceCrawler(proxy=Proxy.NO) as crawler:
-        #result = await crawler.query("https://httpbin.org/json")
-        #print(result)
-        ret = await crawler.client.get("https://www.solarbus.com.tw")
-        print(ret.text)
+    # r = await car_check.CarCheck().client.get('https://www.solarbus.com.tw')
+    resp = await car_check.CarCheck().check_car('2',companyNo='96976746',plateNo='AVH-8180')
+    print(resp)
 
-        ret = await crawler.download_file_stream_async("http://http.speed.hinet.net/test_020m.zip","test.zip")
 
-    await crawler.close()
-
-if __name__ == "__main__":
-    asyncio.run(main())
+asyncio.run(
+   main()
+)

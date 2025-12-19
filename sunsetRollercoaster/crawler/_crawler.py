@@ -6,14 +6,13 @@ from enum import Enum
 from typing import Any
 import truststore
 
-class Proxy(Enum):
-    TW = "http://127.0.0.1:1080"
-    JP = "http://127.0.0.1:1081"
-    NO = None
-
-
 class Crawler(ABC):
-    def __init__(self, proxy: Proxy = Proxy.JP):
+    class Proxy(Enum):
+        TW = "http://127.0.0.1:1080"
+        JP = "http://127.0.0.1:1081"
+        NO = None
+
+    def __init__(self, proxy: Proxy = Proxy.NO):
         self.proxy = proxy
         self.user_agent = ua_generator.generate()
         # todo 這邊不知道為什麼出錯
@@ -41,7 +40,7 @@ class Crawler(ABC):
             timeout=30,
             follow_redirects=True,
             http2=True,
-            transport= AsyncHTTPTransport(retries=3, verify=ctx,proxy=self.proxy.value),
+            transport= AsyncHTTPTransport(retries=3, verify=ctx),
         )
     async def close(self) -> None:
         if hasattr(self, 'client') and self.client:
