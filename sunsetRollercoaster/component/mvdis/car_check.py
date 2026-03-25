@@ -42,17 +42,15 @@ class CarCheck(Crawler):
         resp = await self.client.post('https://www.mvdis.gov.tw/m3-emv-car/car/checkQuery', data=data)
         soup = BeautifulSoup(resp.text, 'html.parser')
         table = soup.find('table', id='info')
-        rows = table.find('tbody').find_all('tr')
+        # rows = table.find('tbody').find_all('tr')
 
-        results = []  # 用來存放所有查詢結果
-        for row in rows:
-            cols = row.find_all('td')
-            data = [col.get_text(strip=True) for col in cols]
-            result_dict = {
-                '車種': data[0],
-                '車號': data[1],
-                '下次定檢日': data[2]
-            }
-            results.append(result_dict)
+        results = []
+        for row in table.find("tbody").find_all("tr"):
+            cells = row.find_all("td")
+            results.append({
+                "車種": cells[0].get_text(strip=True),
+                "車號": cells[1].get_text(strip=True),
+                "定檢日": cells[2].get_text(strip=True),
+            })
 
         return results
