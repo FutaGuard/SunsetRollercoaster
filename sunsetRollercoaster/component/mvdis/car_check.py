@@ -1,9 +1,12 @@
+from typing import Any
+
 import ddddocr
 from bs4 import BeautifulSoup
 from tomlkit import table
+
 from sunsetRollercoaster import crawler
 from sunsetRollercoaster.crawler._crawler import Crawler
-from typing import Any
+
 
 class CarCheck(Crawler):
     def __init__(self, proxy: Crawler.Proxy = Crawler.Proxy.JP):
@@ -43,7 +46,6 @@ class CarCheck(Crawler):
         soup = BeautifulSoup(resp.text, 'html.parser')
         table = soup.find('table', id='info')
         # rows = table.find('tbody').find_all('tr')
-
         results = []
         for row in table.find("tbody").find_all("tr"):
             cells = row.find_all("td")

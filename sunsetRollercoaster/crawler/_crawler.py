@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
-from httpx import AsyncClient,AsyncHTTPTransport
-import httpx
-import ua_generator
 from enum import Enum
 from typing import Any
+
+import httpx
 import truststore
+import ua_generator
+from httpx import AsyncClient, AsyncHTTPTransport
+
 
 class Crawler(ABC):
     class Proxy(Enum):
@@ -15,13 +17,8 @@ class Crawler(ABC):
     def __init__(self, proxy: Proxy = Proxy.NO):
         self.proxy = proxy
         self.user_agent = ua_generator.generate()
-        # todo 這邊不知道為什麼出錯
-        #headers = {**self.user_agent.headers}
-        user_agent_string = getattr(self.user_agent, 'text',
-                            getattr(self.user_agent, 'user_agent','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'))
-
         headers = {
-            "User-Agent": user_agent_string,
+            **self.user_agent.headers.get(),
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
             "Accept-Encoding": "gzip, deflate, br",
@@ -37,10 +34,15 @@ class Crawler(ABC):
         ctx = truststore.SSLContext()
         self.client = AsyncClient(
             headers=headers,
-            timeout=30,
             follow_redirects=True,
             http2=True,
-            transport= AsyncHTTPTransport(retries=3, verify=ctx),
+            transport=AsyncHTTPTransport(retries=3, verify=ctx),
+            timeout=httpx.Timeout(
+                connect=10.0,  # 建立連線
+                read=200.0,  # 等回應（這個調大）
+                write=10.0,  # 送資料
+                pool=10.0,  # 等連線池
+            ),
         )
     async def close(self) -> None:
         if hasattr(self, 'client') and self.client:
