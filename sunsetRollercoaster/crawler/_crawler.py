@@ -36,7 +36,7 @@ class Crawler(ABC):
             headers=headers,
             follow_redirects=True,
             http2=True,
-            transport=AsyncHTTPTransport(retries=3, verify=ctx),
+            transport=AsyncHTTPTransport(retries=3, verify=ctx, proxy=self.proxy.value),
             timeout=httpx.Timeout(
                 connect=10.0,  # 建立連線
                 read=200.0,  # 等回應（這個調大）
