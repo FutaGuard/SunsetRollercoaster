@@ -2,7 +2,8 @@
 
 # ---- builder ----
 FROM rust:1.92-slim-bookworm AS chef
-RUN apt-get update && apt-get install -y --no-install-recommends pkg-config && \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends pkg-config curl ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 RUN cargo install cargo-chef --locked
 WORKDIR /build
