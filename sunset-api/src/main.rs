@@ -1,5 +1,5 @@
 use axum::{Router, routing::get};
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{EnvFilter, fmt};
 use utoipa::OpenApi;
@@ -30,7 +30,13 @@ async fn main() -> anyhow::Result<()> {
         .route("/healthz", get(healthz))
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .merge(api)
-        .layer(CorsLayer::permissive())
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods(Any)
+                .allow_headers(Any)
+                .expose_headers(Any),
+        )
         .layer(TraceLayer::new_for_http());
 
     let addr = format!("{}:{}", cfg.server.host, cfg.server.port);
