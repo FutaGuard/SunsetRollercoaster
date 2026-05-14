@@ -1,0 +1,146 @@
+use axum::{
+    Json, Router,
+    extract::{Path, Query, State},
+    routing::get,
+};
+use chrono::NaiveDate;
+use serde::Deserialize;
+use sqlx::PgPool;
+use utoipa::IntoParams;
+
+use crate::error::{ApiError, ApiResult};
+use crate::handlers::Pagination;
+use crate::models::Invoice;
+
+#[derive(Debug, Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct InvoiceListParams {
+    /// Exact draw date (YYYY-MM-DD).
+    pub date: Option<NaiveDate>,
+    /// Inclusive lower bound on draw date (YYYY-MM-DD).
+    pub start: Option<NaiveDate>,
+    /// Inclusive upper bound on draw date (YYYY-MM-DD).
+    pub end: Option<NaiveDate>,
+    #[param(default = 100, minimum = 1, maximum = 1000)]
+    pub limit: Option<i64>,
+    #[param(default = 0, minimum = 0)]
+    pub offset: Option<i64>,
+}
+
+impl InvoiceListParams {
+    fn pagination(&self) -> Pagination {
+        Pagination {
+            limit: self.limit,
+            offset: self.offset,
+        }
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/invoices",
+    tag = "invoices",
+    params(InvoiceListParams),
+    responses(
+        (status = 200, description = "List invoice draws filtered by date", body = [Invoice])
+    )
+)]
+pub async fn list_invoices(
+    State(pool): State<PgPool>,
+    Query(params): Query<InvoiceListParams>,
+) -> ApiResult<Json<Vec<Invoice>>> {
+    let page = params.pagination();
+    let mut sql = String::from(
+        "SELECT id, date, special_prize, grand_prize, first_prize FROM invoice WHERE 1=1",
+    );
+    if params.date.is_some() {
+        sql.push_str(" AND date = $1");
+    } else {
+        if params.start.is_some() {
+            sql.push_str(" AND date >= $1");
+        }
+        if params.end.is_some() {
+            let n = if params.start.is_some() { 2 } else { 1 };
+            sql.push_str(&format!(" AND date <= ${n}"));
+        }
+    }
+    let next_idx = 1
+        + params.date.is_some() as usize
+        + (params.date.is_none() && params.start.is_some()) as usize
+        + (params.date.is_none() && params.end.is_some()) as usize;
+    sql.push_str(&format!(
+        " ORDER BY date DESC, id DESC LIMIT ${} OFFSET ${}",
+        next_idx,
+        next_idx + 1
+    ));
+
+    let mut q = sqlx::query_as::<_, Invoice>(&sql);
+    if let Some(d) = params.date {
+        q = q.bind(d);
+    } else {
+        if let Some(s) = params.start {
+            q = q.bind(s);
+        }
+        if let Some(e) = params.end {
+            q = q.bind(e);
+        }
+    }
+    let rows = q
+        .bind(page.limit())
+        .bind(page.offset())
+        .fetch_all(&pool)
+        .await?;
+    Ok(Json(rows))
+}
+
+#[utoipa::path(
+    get,
+    path = "/invoices/latest",
+    tag = "invoices",
+    responses(
+        (status = 200, description = "Most recent invoice draw", body = Invoice),
+        (status = 404, description = "No data", body = crate::error::ErrorBody)
+    )
+)]
+pub async fn latest_invoice(State(pool): State<PgPool>) -> ApiResult<Json<Invoice>> {
+    let row = sqlx::query_as::<_, Invoice>(
+        "SELECT id, date, special_prize, grand_prize, first_prize \
+         FROM invoice ORDER BY date DESC, id DESC LIMIT 1",
+    )
+    .fetch_optional(&pool)
+    .await?
+    .ok_or(ApiError::NotFound)?;
+    Ok(Json(row))
+}
+
+#[utoipa::path(
+    get,
+    path = "/invoices/{id}",
+    tag = "invoices",
+    params(("id" = i32, Path, description = "Invoice id")),
+    responses(
+        (status = 200, description = "Invoice detail", body = Invoice),
+        (status = 404, description = "Not found", body = crate::error::ErrorBody)
+    )
+)]
+pub async fn get_invoice(
+    State(pool): State<PgPool>,
+    Path(id): Path<i32>,
+) -> ApiResult<Json<Invoice>> {
+    let row = sqlx::query_as::<_, Invoice>(
+        "SELECT id, date, special_prize, grand_prize, first_prize \
+         FROM invoice WHERE id = $1",
+    )
+    .bind(id)
+    .fetch_optional(&pool)
+    .await?
+    .ok_or(ApiError::NotFound)?;
+    Ok(Json(row))
+}
+
+pub fn router() -> Router<PgPool> {
+    Router::new()
+        .route("/invoices", get(list_invoices))
+        .route("/invoices/latest", get(latest_invoice))
+        .route("/invoices/{id}", get(get_invoice))
+}

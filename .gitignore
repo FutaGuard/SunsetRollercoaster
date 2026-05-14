@@ -4,3 +4,4 @@ env_config.yml
 
 __pycache__/
 .DS_Store
+sunset-api/target

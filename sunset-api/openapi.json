@@ -1,0 +1,515 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sunset Rollercoaster API",
+    "description": "Read-only REST API for invoice draws and Taiwan reservoir records.",
+    "license": {
+      "name": ""
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/invoices": {
+      "get": {
+        "tags": [
+          "invoices"
+        ],
+        "operationId": "list_invoices",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Exact draw date (YYYY-MM-DD).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Inclusive lower bound on draw date (YYYY-MM-DD).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "Inclusive upper bound on draw date (YYYY-MM-DD).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 100,
+              "maximum": 1000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List invoice draws filtered by date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Invoice"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/invoices/latest": {
+      "get": {
+        "tags": [
+          "invoices"
+        ],
+        "operationId": "latest_invoice",
+        "responses": {
+          "200": {
+            "description": "Most recent invoice draw",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/invoices/{id}": {
+      "get": {
+        "tags": [
+          "invoices"
+        ],
+        "operationId": "get_invoice",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Invoice id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invoice detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reservoirs": {
+      "get": {
+        "tags": [
+          "reservoirs"
+        ],
+        "operationId": "list_reservoirs",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Reservoir name (exact match). Combine with `date` to get one reservoir's full day.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Local date (Asia/Taipei, YYYY-MM-DD) to filter `recordTime` by.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hour",
+            "in": "query",
+            "description": "Hour of day in 0..=23 (Asia/Taipei). Requires `date`.\nCombine with `date` (without `name`) to get all reservoirs at one hourly snapshot.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 23,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Inclusive lower bound on `recordTime` (RFC3339).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "Inclusive upper bound on `recordTime` (RFC3339).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 200,
+              "maximum": 5000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reservoir records filtered by name / date / hour / time range",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Reservoir"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reservoirs/latest": {
+      "get": {
+        "tags": [
+          "reservoirs"
+        ],
+        "operationId": "latest_reservoirs",
+        "responses": {
+          "200": {
+            "description": "Latest record for each reservoir name (dashboard snapshot)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Reservoir"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reservoirs/names": {
+      "get": {
+        "tags": [
+          "reservoirs"
+        ],
+        "operationId": "list_reservoir_names",
+        "responses": {
+          "200": {
+            "description": "Distinct reservoir names",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reservoirs/{id}": {
+      "get": {
+        "tags": [
+          "reservoirs"
+        ],
+        "operationId": "get_reservoir",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Reservoir record id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reservoir record detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Reservoir"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ErrorBody": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "Invoice": {
+        "type": "object",
+        "required": [
+          "id",
+          "date",
+          "special_prize",
+          "grand_prize",
+          "first_prize"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "first_prize": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "grand_prize": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "special_prize": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "Reservoir": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "capavailable": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "caplevel": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "currcap": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "currcapper": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "inFlow": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "outFlow": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "rainFall": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "recordTime": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "statisticTimeE": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "statisticTimeS": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "waterlevediff": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "invoices",
+      "description": "Taiwan uniform invoice winning numbers"
+    },
+    {
+      "name": "reservoirs",
+      "description": "Taiwan reservoir water level records"
+    }
+  ]
+}

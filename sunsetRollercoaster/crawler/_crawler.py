@@ -1,14 +1,18 @@
 from abc import ABC, abstractmethod
+from datetime import timedelta
 from enum import Enum
-from typing import Any
+from typing import Any, ClassVar
 
 import httpx
 import truststore
 import ua_generator
 from httpx import AsyncClient, AsyncHTTPTransport
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 
 class Crawler(ABC):
+    INTERVAL: ClassVar[timedelta]
+
     class Proxy(Enum):
         TW = "http://127.0.0.1:1080"
         JP = "http://127.0.0.1:1081"
@@ -76,4 +80,9 @@ class Crawler(ABC):
 
     @abstractmethod
     async def query(self, url: str) -> Any:
+        pass
+
+    @abstractmethod
+    async def sync(self, session: AsyncSession) -> int:
+        '''抓取資料、與 DB 比對，寫入新資料並回傳新增筆數'''
         pass
