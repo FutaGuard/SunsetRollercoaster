@@ -1,0 +1,134 @@
+name: sunset-api
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sunset-api/**'
+      - '.github/workflows/sunset-api.yml'
+    tags:
+      - 'sunset-api-v*'
+  pull_request:
+    paths:
+      - 'sunset-api/**'
+      - '.github/workflows/sunset-api.yml'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/sunset-api
+
+jobs:
+  build:
+    name: cargo build (linux/amd64)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sunset-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: sunset-api -> target
+
+      - name: cargo check
+        run: cargo check --release --all-targets
+
+      - name: cargo build
+        run: cargo build --release --bin sunset-api
+
+      - name: dump openapi.json
+        run: cargo run --release --bin dump_openapi -- openapi.json
+
+      - name: upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: sunset-api-x86_64-linux
+          path: sunset-api/target/release/sunset-api
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: upload openapi.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi.json
+          path: sunset-api/openapi.json
+          if-no-files-found: error
+          retention-days: 14
+
+  docker:
+    name: docker build & push (ghcr.io)
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix=sha-
+            type=match,pattern=sunset-api-v(.*),group=1
+
+      - name: build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: sunset-api
+          file: sunset-api/Dockerfile
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  release:
+    name: attach binary to release
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/sunset-api-v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: sunset-api-x86_64-linux
+          path: dist
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: openapi.json
+          path: dist
+
+      - name: package
+        run: |
+          cd dist
+          chmod +x sunset-api
+          tar czf sunset-api-x86_64-linux.tar.gz sunset-api openapi.json
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/sunset-api-x86_64-linux.tar.gz
+            dist/openapi.json
