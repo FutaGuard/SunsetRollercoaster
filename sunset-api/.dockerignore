@@ -1,0 +1,15 @@
+target/
+**/*.rs.bk
+.git/
+.gitignore
+.vscode/
+.idea/
+*.log
+openapi.json
+deploy/
+docker-compose.yml
+.env
+.env.*
+!.env.example
+Dockerfile
+.dockerignore

@@ -1,0 +1,48 @@
+services:
+  sunset-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sunset-api:latest
+    container_name: sunset-api
+    restart: unless-stopped
+    # env_config.yml lives at the repo root (../). Mount it read-only.
+    # The Rust app looks for ./env_config.yml in WORKDIR (/app).
+    volumes:
+      - ../env_config.yml:/app/env_config.yml:ro
+    environment:
+      RUST_LOG: ${RUST_LOG:-info}
+    # Internal-only by default; cloudflared reaches it over the compose network.
+    # Uncomment `ports:` if you also want to expose it on the host.
+    expose:
+      - "8080"
+    # ports:
+    #   - "8080:8080"
+    networks:
+      - sunset
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e 'GET /healthz HTTP/1.0\\r\\n\\r\\n' >&3 && head -1 <&3 | grep -q '200 OK'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: sunset-cloudflared
+    restart: unless-stopped
+    # Token-based tunnel: create the tunnel + route in the Cloudflare dashboard
+    # (Zero Trust > Networks > Tunnels), then point the public hostname at
+    # http://sunset-api:8080 (the service name on this compose network).
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+    environment:
+      TUNNEL_METRICS: 0.0.0.0:2000
+    depends_on:
+      sunset-api:
+        condition: service_started
+    networks:
+      - sunset
+
+networks:
+  sunset:
+    driver: bridge
