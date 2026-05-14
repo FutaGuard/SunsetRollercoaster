@@ -1,9 +1,7 @@
 services:
   sunset-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: sunset-api:latest
+    image: ghcr.io/futaguard/sunset-api:latest
+    pull_policy: always
     container_name: sunset-api
     restart: unless-stopped
     # env_config.yml lives at the repo root (../). Mount it read-only.
