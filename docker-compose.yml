@@ -1,21 +1,34 @@
 services:
+  # ----- Python crawler (scheduled jobs that write to PostgreSQL) -----
+  crawler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sunset-crawler:local
+    container_name: sunset-crawler
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./env_config.yml:/app/env_config.yml:ro
+    environment:
+      TZ: Asia/Taipei
+    networks:
+      - sunset
+
+  # ----- Rust read-only API (consumed by the frontend / cloudflared) -----
   sunset-api:
     image: ghcr.io/futaguard/sunset-api:latest
     pull_policy: always
     container_name: sunset-api
     restart: unless-stopped
-    # Lets env_config.yml use `host: host.docker.internal` to reach a DB
-    # that runs on the host (e.g. another container with network_mode: host).
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    # env_config.yml lives at the repo root (../). Mount it read-only.
-    # The Rust app looks for ./env_config.yml in WORKDIR (/app).
     volumes:
-      - ../env_config.yml:/app/env_config.yml:ro
+      - ./env_config.yml:/app/env_config.yml:ro
     environment:
       RUST_LOG: ${RUST_LOG:-info}
-    # Internal-only by default; cloudflared reaches it over the compose network.
-    # Uncomment `ports:` if you also want to expose it on the host.
+      TZ: Asia/Taipei
     expose:
       - "8080"
     # ports:
@@ -29,13 +42,12 @@ services:
       retries: 3
       start_period: 5s
 
+  # ----- Cloudflare Tunnel (public ingress for sunset-api) -----
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: sunset-cloudflared
     restart: unless-stopped
-    # Token-based tunnel: create the tunnel + route in the Cloudflare dashboard
-    # (Zero Trust > Networks > Tunnels), then point the public hostname at
-    # http://sunset-api:8080 (the service name on this compose network).
+    # Public Hostname in the CF dashboard should point at http://sunset-api:8080
     command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
     environment:
       TUNNEL_METRICS: 0.0.0.0:2000
