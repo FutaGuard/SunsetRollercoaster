@@ -2,18 +2,16 @@ from typing import Any
 
 import ddddocr
 from bs4 import BeautifulSoup
-from tomlkit import table
 
-from sunsetRollercoaster import crawler
 from sunsetRollercoaster.crawler._crawler import Crawler
 
 
 class CarCheck(Crawler):
-    def __init__(self, proxy: Crawler.Proxy = Crawler.Proxy.JP):
+    def __init__(self, proxy: Crawler.Proxy = Crawler.Proxy.NO):
         super().__init__(proxy)
 
     async def query(self, url):
-        return await super().query(url)
+        pass
 
     async def check_car(self, queryType: str,companyNo: str='',plateNo: str='',idNo: str='',birthday: str='') -> Any:
         '''
@@ -22,9 +20,8 @@ class CarCheck(Crawler):
         :param companyNo: 身分證或是統編
         :param plateNo: 車牌號碼
         '''
-        #
         url ='https://www.mvdis.gov.tw/m3-emv-car/car/checkQuery'
-        resp = await self.client.get(url)
+        await self.client.get(url)
 
         captcha_img = await self.client.get('https://www.mvdis.gov.tw//m3-emv-car/captchaImg.jpg')
         ocr = ddddocr.DdddOcr(show_ad=False)
@@ -42,10 +39,9 @@ class CarCheck(Crawler):
             'carType': '1',
             'validateStr': captcha_code,
         }
-        resp = await self.client.post('https://www.mvdis.gov.tw/m3-emv-car/car/checkQuery', data=data)
+        resp = await self.client.post(url, data=data)
         soup = BeautifulSoup(resp.text, 'html.parser')
         table = soup.find('table', id='info')
-        # rows = table.find('tbody').find_all('tr')
         results = []
         for row in table.find("tbody").find_all("tr"):
             cells = row.find_all("td")
