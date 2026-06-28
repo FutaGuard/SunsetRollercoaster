@@ -61,9 +61,7 @@ pub async fn list_reservoirs(
     Query(params): Query<ReservoirListParams>,
 ) -> ApiResult<Json<Vec<Reservoir>>> {
     if params.hour.is_some() && params.date.is_none() {
-        return Err(ApiError::BadRequest(
-            "`hour` requires `date`".to_string(),
-        ));
+        return Err(ApiError::BadRequest("`hour` requires `date`".to_string()));
     }
     if let Some(h) = params.hour {
         if !(0..=23).contains(&h) {
@@ -164,7 +162,9 @@ pub async fn latest_reservoirs(State(pool): State<PgPool>) -> ApiResult<Json<Vec
               WHERE name IS NOT NULL
            ) r WHERE rn = 1 ORDER BY name ASC"#
     );
-    let rows = sqlx::query_as::<_, Reservoir>(&sql).fetch_all(&pool).await?;
+    let rows = sqlx::query_as::<_, Reservoir>(&sql)
+        .fetch_all(&pool)
+        .await?;
     Ok(Json(rows))
 }
 
