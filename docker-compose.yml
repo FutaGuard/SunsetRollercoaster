@@ -38,7 +38,8 @@ services:
     healthcheck:
       # The runtime image is Debian slim: /bin/sh has no Bash /dev/tcp support.
       # The API opens its listener only after configuration and database setup complete.
-      test: ["CMD-SHELL", "grep -q ':1F90 ' /proc/net/tcp /proc/net/tcp6"]
+      # Derive the port from the same mounted config file the API uses.
+      test: ["CMD-SHELL", "port=$$(grep -A2 '^server:' /app/env_config.yml | grep '^  port:' | cut -d: -f2 | tr -d ' ') && port_hex=$$(printf '%04X' \"$$port\") && grep -q \":$$port_hex \" /proc/net/tcp /proc/net/tcp6"]
       interval: 30s
       timeout: 5s
       retries: 3
