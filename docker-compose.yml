@@ -36,7 +36,9 @@ services:
     networks:
       - sunset
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e 'GET /healthz HTTP/1.0\\r\\n\\r\\n' >&3 && head -1 <&3 | grep -q '200 OK'"]
+      # The runtime image is Debian slim: /bin/sh has no Bash /dev/tcp support.
+      # The API opens its listener only after configuration and database setup complete.
+      test: ["CMD-SHELL", "grep -q ':1F90 ' /proc/net/tcp /proc/net/tcp6"]
       interval: 30s
       timeout: 5s
       retries: 3
