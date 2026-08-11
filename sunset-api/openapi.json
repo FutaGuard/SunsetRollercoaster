@@ -2,13 +2,163 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Sunset Rollercoaster API",
-    "description": "Read-only REST API for invoice draws and Taiwan reservoir records.",
+    "description": "Read-only REST API for Taiwan fuel prices, invoice draws, and reservoir records.",
     "license": {
       "name": ""
     },
     "version": "0.1.0"
   },
   "paths": {
+    "/fuel-prices": {
+      "get": {
+        "tags": [
+          "fuel-prices"
+        ],
+        "operationId": "list_fuel_prices",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Exact period start date in Asia/Taipei (YYYY-MM-DD).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Inclusive lower bound on the period start date in Asia/Taipei (YYYY-MM-DD).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "Inclusive upper bound on the period start date in Asia/Taipei (YYYY-MM-DD).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 100,
+              "maximum": 1000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List nationwide weekly fuel prices filtered by period start date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NationwideFuelPrice"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fuel-prices/latest": {
+      "get": {
+        "tags": [
+          "fuel-prices"
+        ],
+        "operationId": "latest_fuel_price",
+        "responses": {
+          "200": {
+            "description": "Most recent nationwide weekly fuel price",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NationwideFuelPrice"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fuel-prices/{id}": {
+      "get": {
+        "tags": [
+          "fuel-prices"
+        ],
+        "operationId": "get_fuel_price",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Fuel price record id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fuel price record detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NationwideFuelPrice"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/invoices": {
       "get": {
         "tags": [
@@ -405,6 +555,48 @@
           }
         }
       },
+      "NationwideFuelPrice": {
+        "type": "object",
+        "required": [
+          "id",
+          "period_start",
+          "period_end",
+          "unleaded_92",
+          "unleaded_95",
+          "unleaded_98",
+          "super_diesel"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "super_diesel": {
+            "type": "number",
+            "format": "double"
+          },
+          "unleaded_92": {
+            "type": "number",
+            "format": "double"
+          },
+          "unleaded_95": {
+            "type": "number",
+            "format": "double"
+          },
+          "unleaded_98": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
       "Reservoir": {
         "type": "object",
         "required": [
@@ -503,6 +695,10 @@
     }
   },
   "tags": [
+    {
+      "name": "fuel-prices",
+      "description": "Taiwan nationwide weekly fuel prices"
+    },
     {
       "name": "invoices",
       "description": "Taiwan uniform invoice winning numbers"

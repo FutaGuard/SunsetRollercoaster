@@ -20,6 +20,7 @@ async fn main() -> anyhow::Result<()> {
     let pool = db::create_pool(&cfg.database).await?;
 
     let api = Router::new()
+        .merge(handlers::fuel_price::router())
         .merge(handlers::invoice::router())
         .merge(handlers::reservoir::router())
         .with_state(pool);
