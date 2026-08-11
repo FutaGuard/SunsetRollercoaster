@@ -12,8 +12,7 @@ use crate::error::{ApiError, ApiResult};
 use crate::handlers::Pagination;
 use crate::models::NationwideFuelPrice;
 
-const SELECT_COLS: &str =
-    "id, period_start, period_end, unleaded_92, unleaded_95, unleaded_98, super_diesel";
+const SELECT_COLS: &str = "id, period_start, period_end, unleaded_92, unleaded_95, unleaded_98, super_diesel, west_texas, dubai, brent";
 const TZ: &str = "Asia/Taipei";
 
 #[derive(Debug, Deserialize, IntoParams)]
@@ -46,7 +45,7 @@ impl FuelPriceListParams {
     tag = "fuel-prices",
     params(FuelPriceListParams),
     responses(
-        (status = 200, description = "List nationwide weekly fuel prices filtered by period start date", body = [NationwideFuelPrice])
+        (status = 200, description = "List weekly Taiwan fuel and international crude oil prices filtered by period start date", body = [NationwideFuelPrice])
     )
 )]
 pub async fn list_fuel_prices(
@@ -107,7 +106,7 @@ pub async fn list_fuel_prices(
     path = "/fuel-prices/latest",
     tag = "fuel-prices",
     responses(
-        (status = 200, description = "Most recent nationwide weekly fuel price", body = NationwideFuelPrice),
+        (status = 200, description = "Most recent weekly Taiwan fuel and international crude oil prices", body = NationwideFuelPrice),
         (status = 404, description = "No data", body = crate::error::ErrorBody)
     )
 )]

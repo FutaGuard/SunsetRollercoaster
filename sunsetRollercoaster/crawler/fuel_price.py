@@ -1,3 +1,4 @@
+import asyncio
 import math
 import re
 from datetime import datetime, timedelta, timezone
@@ -10,18 +11,18 @@ from sunsetRollercoaster.models.fuel_price import NationwideFuelPrice
 
 from ._crawler import Crawler
 
-_WEEK_PERIOD_RE = re.compile(
-    r"^\s*(\d{4}/\d{2}/\d{2})\s*~\s*(\d{4}/\d{2}/\d{2})\s*$"
-)
+_WEEK_PERIOD_RE = re.compile(r"^\s*(\d{4}/\d{2}/\d{2})\s*~\s*(\d{4}/\d{2}/\d{2})\s*$")
 _TW_TZ = timezone(timedelta(hours=8))
 
 
 class NationwideFuelPriceCrawler(Crawler):
-    """同步經濟部能源署公布的全國汽柴油週均價。"""
+    """同步經濟部能源署公布的全國汽柴油及國際原油週均價。"""
 
     INTERVAL = timedelta(days=1)
     LOAD_URL = "https://www2.moeaea.gov.tw/oil111/Gasoline/NationwideAvg/load"
     RANGE_URL = "https://www2.moeaea.gov.tw/oil111/Gasoline/GetRangeNationwideAvg"
+    CRUDE_LOAD_URL = "https://www2.moeaea.gov.tw/oil111/CrudeOil/CrudeOil/load"
+    CRUDE_RANGE_URL = "https://www2.moeaea.gov.tw/oil111/CrudeOil/GetRangePrice"
     YEAR_WEEK_URL = "https://www2.moeaea.gov.tw/oil111/Common/GetYearWeek"
     UNIT = "week"
     FIRST_DATA_YEAR = 2003
@@ -36,7 +37,14 @@ class NationwideFuelPriceCrawler(Crawler):
         has_data = (
             await session.exec(select(NationwideFuelPrice.id).limit(1))
         ).first() is not None
-        items = await self.fetch(full_history=not has_data)
+        has_crude_data = (
+            await session.exec(
+                select(NationwideFuelPrice.id)
+                .where(NationwideFuelPrice.west_texas.is_not(None))
+                .limit(1)
+            )
+        ).first() is not None
+        items = await self.fetch(full_history=not has_data or not has_crude_data)
 
         if not items:
             return 0
@@ -65,6 +73,9 @@ class NationwideFuelPriceCrawler(Crawler):
             existing.unleaded_95 = item.unleaded_95
             existing.unleaded_98 = item.unleaded_98
             existing.super_diesel = item.super_diesel
+            existing.west_texas = item.west_texas
+            existing.dubai = item.dubai
+            existing.brent = item.brent
 
         await session.commit()
         return added
@@ -72,22 +83,26 @@ class NationwideFuelPriceCrawler(Crawler):
     async def fetch(self, full_history: bool = False) -> list[NationwideFuelPrice]:
         """取得最近 20 週，或首次同步所需的完整歷史週資料。"""
 
-        latest_payload = await self.query(self.LOAD_URL)
+        latest_payload, latest_crude_payload = await asyncio.gather(
+            self.query(self.LOAD_URL),
+            self.query(self.CRUDE_LOAD_URL),
+        )
         if not full_history:
-            return self._parse(latest_payload)
+            return self._parse_combined(latest_payload, latest_crude_payload)
 
         latest_data = self._response_data(latest_payload)
         end_week = self._positive_int(latest_data.get("endweek"), "endweek")
         start_week = await self._first_week_id()
-        history_payload = await self._post_json(
-            self.RANGE_URL,
-            {
-                "unit": self.UNIT,
-                "start": str(start_week),
-                "end": str(end_week),
-            },
+        range_params = {
+            "unit": self.UNIT,
+            "start": str(start_week),
+            "end": str(end_week),
+        }
+        history_payload, crude_history_payload = await asyncio.gather(
+            self._post_json(self.RANGE_URL, range_params),
+            self._post_json(self.CRUDE_RANGE_URL, range_params),
         )
-        return self._parse(history_payload)
+        return self._parse_combined(history_payload, crude_history_payload)
 
     async def _first_week_id(self) -> int:
         payload = await self._post_json(
@@ -116,6 +131,7 @@ class NationwideFuelPriceCrawler(Crawler):
                 "Accept": "application/json",
                 # Crawler 的共用 header 會宣告 br，但專案目前沒有 Brotli decoder。
                 "Accept-Encoding": "gzip, deflate",
+                "X-Requested-With": "XMLHttpRequest",
             },
         )
         response.raise_for_status()
@@ -148,13 +164,72 @@ class NationwideFuelPriceCrawler(Crawler):
             )
         return results
 
+    @classmethod
+    def _parse_combined(
+        cls,
+        fuel_payload: dict[str, Any],
+        crude_payload: dict[str, Any],
+    ) -> list[NationwideFuelPrice]:
+        results = cls._parse(fuel_payload)
+        crude_by_period = cls._parse_crude_prices(crude_payload)
+
+        for item in results:
+            prices = crude_by_period.get((item.period_start, item.period_end))
+            if prices is None:
+                period = f"{item.period_start:%Y/%m/%d} ~ {item.period_end:%Y/%m/%d}"
+                raise ValueError(f"crude oil price response missing period: {period}")
+            item.west_texas, item.dubai, item.brent = prices
+
+        return results
+
+    @classmethod
+    def _parse_crude_prices(
+        cls,
+        payload: dict[str, Any],
+    ) -> dict[
+        tuple[datetime, datetime], tuple[float | None, float | None, float | None]
+    ]:
+        data = cls._crude_response_data(payload)
+        raw_items = data.get("crudeoil")
+        if not isinstance(raw_items, list):
+            raise ValueError("crude oil price response has no crudeoil list")
+
+        results: dict[
+            tuple[datetime, datetime],
+            tuple[float | None, float | None, float | None],
+        ] = {}
+        for raw in raw_items:
+            if not isinstance(raw, dict):
+                raise ValueError("crude oil price item is not a JSON object")
+            period = cls._parse_week_period(raw.get("SurDate"))
+            results[period] = (
+                cls._optional_crude_price(raw.get("WestT"), "WestT"),
+                cls._optional_crude_price(raw.get("Dubit"), "Dubit"),
+                cls._optional_crude_price(raw.get("Burant"), "Burant"),
+            )
+        return results
+
     @staticmethod
     def _response_data(payload: dict[str, Any]) -> dict[str, Any]:
         if payload.get("res") != "01":
-            raise ValueError(f"fuel price request failed: {payload.get('msg') or 'unknown error'}")
+            raise ValueError(
+                f"fuel price request failed: {payload.get('msg') or 'unknown error'}"
+            )
         data = payload.get("data")
         if not isinstance(data, dict):
             raise ValueError("fuel price response has no data object")
+        return data
+
+    @staticmethod
+    def _crude_response_data(payload: dict[str, Any]) -> dict[str, Any]:
+        # 官方原油 load 端點成功時 res 為空字串，區間端點則回傳 "01"。
+        if payload.get("res") not in ("", "01"):
+            raise ValueError(
+                f"crude oil price request failed: {payload.get('msg') or 'unknown error'}"
+            )
+        data = payload.get("data")
+        if not isinstance(data, dict):
+            raise ValueError("crude oil price response has no data object")
         return data
 
     @staticmethod
@@ -162,12 +237,12 @@ class NationwideFuelPriceCrawler(Crawler):
         match = _WEEK_PERIOD_RE.fullmatch(str(value or ""))
         if match is None:
             raise ValueError(f"invalid fuel price period: {value!r}")
-        period_start = datetime.fromisoformat(
-            match.group(1).replace("/", "-")
-        ).replace(tzinfo=_TW_TZ)
-        period_end = datetime.fromisoformat(
-            match.group(2).replace("/", "-")
-        ).replace(tzinfo=_TW_TZ)
+        period_start = datetime.fromisoformat(match.group(1).replace("/", "-")).replace(
+            tzinfo=_TW_TZ
+        )
+        period_end = datetime.fromisoformat(match.group(2).replace("/", "-")).replace(
+            tzinfo=_TW_TZ
+        )
         if period_start > period_end:
             raise ValueError(f"invalid fuel price period: {value!r}")
         return period_start, period_end
@@ -182,6 +257,21 @@ class NationwideFuelPriceCrawler(Crawler):
             raise ValueError(f"invalid fuel price {field}: {value!r}") from exc
         if not math.isfinite(price) or price < 0:
             raise ValueError(f"invalid fuel price {field}: {value!r}")
+        return price
+
+    @staticmethod
+    def _optional_crude_price(value: Any, field: str) -> float | None:
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            raise ValueError(f"invalid crude oil price {field}: {value!r}")
+        try:
+            price = float(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"invalid crude oil price {field}: {value!r}") from exc
+        # WTI 在 2020/04/20 曾出現負價格，國際原油不可套用零以上限制。
+        if not math.isfinite(price):
+            raise ValueError(f"invalid crude oil price {field}: {value!r}")
         return price
 
     @staticmethod

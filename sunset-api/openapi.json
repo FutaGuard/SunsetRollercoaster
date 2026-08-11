@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Sunset Rollercoaster API",
-    "description": "Read-only REST API for Taiwan fuel prices, invoice draws, and reservoir records.",
+    "description": "Read-only REST API for Taiwan and international fuel prices, invoice draws, and reservoir records.",
     "license": {
       "name": ""
     },
@@ -72,7 +72,7 @@
         ],
         "responses": {
           "200": {
-            "description": "List nationwide weekly fuel prices filtered by period start date",
+            "description": "List weekly Taiwan fuel and international crude oil prices filtered by period start date",
             "content": {
               "application/json": {
                 "schema": {
@@ -95,7 +95,7 @@
         "operationId": "latest_fuel_price",
         "responses": {
           "200": {
-            "description": "Most recent nationwide weekly fuel price",
+            "description": "Most recent weekly Taiwan fuel and international crude oil prices",
             "content": {
               "application/json": {
                 "schema": {
@@ -567,6 +567,22 @@
           "super_diesel"
         ],
         "properties": {
+          "brent": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Weekly average North Sea Brent price in USD per barrel."
+          },
+          "dubai": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Weekly average Dubai crude price in USD per barrel."
+          },
           "id": {
             "type": "integer",
             "format": "int32"
@@ -594,6 +610,14 @@
           "unleaded_98": {
             "type": "number",
             "format": "double"
+          },
+          "west_texas": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Weekly average West Texas Intermediate price in USD per barrel."
           }
         }
       },
@@ -697,7 +721,7 @@
   "tags": [
     {
       "name": "fuel-prices",
-      "description": "Taiwan nationwide weekly fuel prices"
+      "description": "Weekly Taiwan fuel and international crude oil prices"
     },
     {
       "name": "invoices",

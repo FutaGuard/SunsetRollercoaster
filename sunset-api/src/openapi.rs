@@ -9,7 +9,7 @@ use crate::models::{Invoice, NationwideFuelPrice, Reservoir};
     info(
         title = "Sunset Rollercoaster API",
         version = "0.1.0",
-        description = "Read-only REST API for Taiwan fuel prices, invoice draws, and reservoir records."
+        description = "Read-only REST API for Taiwan and international fuel prices, invoice draws, and reservoir records."
     ),
     paths(
         handlers::fuel_price::list_fuel_prices,
@@ -25,7 +25,7 @@ use crate::models::{Invoice, NationwideFuelPrice, Reservoir};
     ),
     components(schemas(NationwideFuelPrice, Invoice, Reservoir, ErrorBody)),
     tags(
-        (name = "fuel-prices", description = "Taiwan nationwide weekly fuel prices"),
+        (name = "fuel-prices", description = "Weekly Taiwan fuel and international crude oil prices"),
         (name = "invoices", description = "Taiwan uniform invoice winning numbers"),
         (name = "reservoirs", description = "Taiwan reservoir water level records")
     )

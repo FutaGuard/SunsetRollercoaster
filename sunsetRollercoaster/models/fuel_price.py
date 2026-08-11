@@ -6,7 +6,7 @@ from sqlmodel import Field, SQLModel
 
 
 class NationwideFuelPrice(SQLModel, table=True):
-    """經濟部能源署公布的全國汽柴油週均價（新臺幣元／公升）。"""
+    """經濟部能源署公布的全國汽柴油及國際原油週均價。"""
 
     __tablename__ = "nationwide_fuel_price"
     __table_args__ = (
@@ -28,3 +28,6 @@ class NationwideFuelPrice(SQLModel, table=True):
     unleaded_95: float
     unleaded_98: float
     super_diesel: float
+    west_texas: Optional[float] = None
+    dubai: Optional[float] = None
+    brent: Optional[float] = None
