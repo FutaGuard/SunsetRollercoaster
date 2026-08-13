@@ -3,6 +3,7 @@ database:
   port: 5432
   user: postgres
   password: postgres
+  # Alembic automatically renames the legacy taiwanreservoir database.
   name: sunset
 
 # Optional. Consumed only by sunset-api (Rust). Defaults: 0.0.0.0:8080.

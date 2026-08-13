@@ -9,6 +9,12 @@ from sqlmodel import SQLModel
 from alembic import context
 from sunsetRollercoaster import models  # noqa: F401  載入所有 model 註冊到 metadata
 from sunsetRollercoaster.config import get_config
+from sunsetRollercoaster.database_migration import rename_database_if_needed
+
+LEGACY_DATABASE_NAME = "taiwanreservoir"
+DATABASE_NAME = "sunset"
+COMMAND_NAME_KEY = "alembic_command_name"
+RENAME_AFTER_MIGRATION_KEY = "rename_database_after_migration"
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -21,6 +27,17 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = SQLModel.metadata
+
+
+def is_upgrade_command() -> bool:
+    """Support both the Alembic CLI and the app's programmatic upgrade."""
+    if config.attributes.get(COMMAND_NAME_KEY) == "upgrade":
+        return True
+
+    command_options = config.cmd_opts
+    command = getattr(command_options, "cmd", None)
+    return bool(command and command[0].__name__ == "upgrade")
+
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -65,16 +82,49 @@ async def run_async_migrations() -> None:
 
     """
 
+    database_url = config.get_main_option("sqlalchemy.url")
+
+    # PostgreSQL refuses to rename the database used by the current session.
+    # Perform the one-time rename through the maintenance database before
+    # Alembic opens its normal migration connection.
+    if is_upgrade_command() and get_config().database.name == DATABASE_NAME:
+        renamed = await rename_database_if_needed(
+            database_url,
+            LEGACY_DATABASE_NAME,
+            DATABASE_NAME,
+        )
+        if renamed:
+            config.print_stdout(
+                f"Renamed database {LEGACY_DATABASE_NAME!r} to {DATABASE_NAME!r}"
+            )
+
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
+    try:
+        async with connectable.connect() as connection:
+            await connection.run_sync(do_run_migrations)
+    finally:
+        await connectable.dispose()
 
-    await connectable.dispose()
+    rename_after_migration = config.attributes.pop(
+        RENAME_AFTER_MIGRATION_KEY,
+        None,
+    )
+    if rename_after_migration is not None:
+        source_name, destination_name = rename_after_migration
+        renamed = await rename_database_if_needed(
+            database_url,
+            source_name,
+            destination_name,
+        )
+        if renamed:
+            config.print_stdout(
+                f"Renamed database {source_name!r} to {destination_name!r}"
+            )
 
 
 def run_migrations_online() -> None:

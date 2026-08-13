@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Sunset Rollercoaster API",
-    "description": "Read-only REST API for Taiwan and international fuel prices, invoice draws, and reservoir records.",
+    "description": "Read-only REST API for Taipower electricity data, Taiwan and international fuel prices, invoice draws, and reservoir records.",
     "license": {
       "name": ""
     },
@@ -505,6 +505,671 @@
           }
         }
       }
+    },
+    "/taipower/area-loads": {
+      "get": {
+        "tags": [
+          "taipower"
+        ],
+        "operationId": "list_area_loads",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Exact local date in Asia/Taipei (YYYY-MM-DD).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Inclusive UTC timestamp lower bound (RFC3339). Ignored when `date` is set.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "Inclusive UTC timestamp upper bound (RFC3339). Ignored when `date` is set.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 500,
+              "maximum": 5000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List ten-minute regional load curve records; power values are MW",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaipowerAreaLoad"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/taipower/area-loads/latest": {
+      "get": {
+        "tags": [
+          "taipower"
+        ],
+        "operationId": "latest_area_load",
+        "responses": {
+          "200": {
+            "description": "Latest ten-minute regional load record",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaipowerAreaLoad"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/taipower/area-snapshots": {
+      "get": {
+        "tags": [
+          "taipower"
+        ],
+        "operationId": "list_area_snapshots",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Exact local date in Asia/Taipei (YYYY-MM-DD).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Inclusive UTC timestamp lower bound (RFC3339). Ignored when `date` is set.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "Inclusive UTC timestamp upper bound (RFC3339). Ignored when `date` is set.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 500,
+              "maximum": 5000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List regional generation and load snapshots; power values are MW",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaipowerAreaSnapshot"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/taipower/area-snapshots/latest": {
+      "get": {
+        "tags": [
+          "taipower"
+        ],
+        "operationId": "latest_area_snapshot",
+        "responses": {
+          "200": {
+            "description": "Latest regional generation and load snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaipowerAreaSnapshot"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/taipower/fuel-mix": {
+      "get": {
+        "tags": [
+          "taipower"
+        ],
+        "operationId": "list_fuel_mix",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Exact local date in Asia/Taipei (YYYY-MM-DD).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Inclusive UTC timestamp lower bound (RFC3339). Ignored when `date` is set.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "Inclusive UTC timestamp upper bound (RFC3339). Ignored when `date` is set.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 500,
+              "maximum": 5000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List ten-minute fuel-mix curve records; power values are MW",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaipowerFuelMix"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/taipower/fuel-mix/latest": {
+      "get": {
+        "tags": [
+          "taipower"
+        ],
+        "operationId": "latest_fuel_mix",
+        "responses": {
+          "200": {
+            "description": "Latest ten-minute fuel-mix record",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaipowerFuelMix"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/taipower/generators": {
+      "get": {
+        "tags": [
+          "taipower"
+        ],
+        "operationId": "list_generators",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Exact snapshot date in Asia/Taipei (YYYY-MM-DD).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "category_code",
+            "in": "query",
+            "description": "Exact source category code, for example `lng`, `coal`, or `solar`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "unit_name",
+            "in": "query",
+            "description": "Exact generator or subtotal name.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "is_summary",
+            "in": "query",
+            "description": "Filter regular unit rows (`false`) or category subtotal rows (`true`).",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 500,
+              "maximum": 5000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List generator output snapshot rows; power values are MW",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaipowerGenerator"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/taipower/generators/latest": {
+      "get": {
+        "tags": [
+          "taipower"
+        ],
+        "operationId": "latest_generators",
+        "responses": {
+          "200": {
+            "description": "All unit and subtotal rows from the latest generator snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaipowerGenerator"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/taipower/operating-reserves": {
+      "get": {
+        "tags": [
+          "taipower"
+        ],
+        "operationId": "list_operating_reserves",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Inclusive date lower bound. Ignored when `date` is set.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "Inclusive date upper bound. Ignored when `date` is set.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 500,
+              "maximum": 5000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List daily peak load and operating reserve records; power values are MW",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaipowerOperatingReserve"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/taipower/operating-reserves/latest": {
+      "get": {
+        "tags": [
+          "taipower"
+        ],
+        "operationId": "latest_operating_reserve",
+        "responses": {
+          "200": {
+            "description": "Latest operating reserve record (normally today's forecast)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaipowerOperatingReserve"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/taipower/power-snapshots": {
+      "get": {
+        "tags": [
+          "taipower"
+        ],
+        "operationId": "list_power_snapshots",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Exact local date in Asia/Taipei (YYYY-MM-DD).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Inclusive UTC timestamp lower bound (RFC3339). Ignored when `date` is set.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "Inclusive UTC timestamp upper bound (RFC3339). Ignored when `date` is set.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 500,
+              "maximum": 5000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List Taipower current-load and peak forecast snapshots; power values are MW",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaipowerPowerSnapshot"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/taipower/power-snapshots/latest": {
+      "get": {
+        "tags": [
+          "taipower"
+        ],
+        "operationId": "latest_power_snapshot",
+        "responses": {
+          "200": {
+            "description": "Latest Taipower current-load and peak forecast snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaipowerPowerSnapshot"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -715,6 +1380,452 @@
             "format": "double"
           }
         }
+      },
+      "TaipowerAreaLoad": {
+        "type": "object",
+        "required": [
+          "id",
+          "observed_at",
+          "north_load_mw",
+          "central_load_mw",
+          "south_load_mw",
+          "east_load_mw",
+          "total_load_mw"
+        ],
+        "properties": {
+          "central_load_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "east_load_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "north_load_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "south_load_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "total_load_mw": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "TaipowerAreaSnapshot": {
+        "type": "object",
+        "required": [
+          "id",
+          "observed_at",
+          "north_generation_mw",
+          "north_load_mw",
+          "central_generation_mw",
+          "central_load_mw",
+          "south_generation_mw",
+          "south_load_mw",
+          "east_generation_mw",
+          "east_load_mw"
+        ],
+        "properties": {
+          "central_generation_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "central_load_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "east_generation_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "east_load_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "north_generation_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "north_load_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "south_generation_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "south_load_mw": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "TaipowerFuelMix": {
+        "type": "object",
+        "required": [
+          "id",
+          "observed_at",
+          "lng_mw",
+          "ipp_lng_mw",
+          "coal_mw",
+          "ipp_coal_mw",
+          "cogeneration_mw",
+          "fuel_oil_mw",
+          "solar_mw",
+          "wind_mw",
+          "hydro_mw",
+          "energy_storage_mw",
+          "other_renewable_mw",
+          "energy_storage_load_mw",
+          "total_mw"
+        ],
+        "properties": {
+          "coal_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "cogeneration_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "energy_storage_load_mw": {
+            "type": "number",
+            "format": "double",
+            "description": "Storage charging load in MW; this is normally zero or negative."
+          },
+          "energy_storage_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "fuel_oil_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "hydro_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ipp_coal_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "ipp_lng_mw": {
+            "type": "number",
+            "format": "double",
+            "description": "Independent power producer LNG generation in MW."
+          },
+          "lng_mw": {
+            "type": "number",
+            "format": "double",
+            "description": "Taipower-owned LNG generation in MW."
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "other_renewable_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "solar_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "total_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "wind_mw": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "TaipowerGenerator": {
+        "type": "object",
+        "required": [
+          "id",
+          "published_at",
+          "sequence",
+          "category_code",
+          "category",
+          "unit_name",
+          "is_summary"
+        ],
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "category_code": {
+            "type": "string",
+            "description": "Stable source category code such as `lng`, `coal`, or `solar`."
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "installed_capacity_mw": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "installed_capacity_percent": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Category share included by Taipower on subtotal rows."
+          },
+          "is_summary": {
+            "type": "boolean"
+          },
+          "net_generation_mw": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "net_generation_percent": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Category share included by Taipower on subtotal rows."
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sequence": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Row order in the source snapshot."
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "subcategory": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unit_name": {
+            "type": "string"
+          },
+          "utilization_percent": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "TaipowerOperatingReserve": {
+        "type": "object",
+        "required": [
+          "id",
+          "date",
+          "peak_load_mw",
+          "reserve_capacity_mw",
+          "reserve_rate_percent",
+          "is_forecast"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "is_forecast": {
+            "type": "boolean",
+            "description": "True for today's published estimate; false after actual data is available."
+          },
+          "peak_load_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "published_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Publish time is present for today's forecast and absent for historical actuals."
+          },
+          "reserve_capacity_mw": {
+            "type": "number",
+            "format": "double"
+          },
+          "reserve_rate_percent": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "TaipowerPowerSnapshot": {
+        "type": "object",
+        "required": [
+          "id",
+          "published_at"
+        ],
+        "properties": {
+          "current_load_mw": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Current system load in MW."
+          },
+          "current_utilization_percent": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "forecast_max_supply_mw": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "forecast_peak_demand_mw": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "forecast_peak_hour_range": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "forecast_peak_reserve_indicator": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Taipower's reserve indicator code (for example, `G`)."
+          },
+          "forecast_peak_reserve_mw": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "forecast_peak_reserve_rate_percent": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "realtime_max_supply_mw": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "realtime_peak_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "yesterday_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "yesterday_max_supply_mw": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "yesterday_peak_demand_mw": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "yesterday_peak_reserve_indicator": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "yesterday_peak_reserve_mw": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "yesterday_peak_reserve_rate_percent": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          }
+        }
       }
     }
   },
@@ -730,6 +1841,10 @@
     {
       "name": "reservoirs",
       "description": "Taiwan reservoir water level records"
+    },
+    {
+      "name": "taipower",
+      "description": "Taiwan Power Company load, generation, regional, and operating reserve data; all power values are normalized to MW"
     }
   ]
 }

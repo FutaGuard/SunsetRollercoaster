@@ -1,6 +1,7 @@
 pub mod fuel_price;
 pub mod invoice;
 pub mod reservoir;
+pub mod taipower;
 
 use serde::Deserialize;
 use utoipa::IntoParams;

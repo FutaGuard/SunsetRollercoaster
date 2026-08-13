@@ -23,6 +23,7 @@ async fn main() -> anyhow::Result<()> {
         .merge(handlers::fuel_price::router())
         .merge(handlers::invoice::router())
         .merge(handlers::reservoir::router())
+        .merge(handlers::taipower::router())
         .with_state(pool);
 
     let app = Router::new()

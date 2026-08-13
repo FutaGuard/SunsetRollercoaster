@@ -1,6 +1,7 @@
 
 taipower/target/
 env_config.yml
+key.key
 
 __pycache__/
 .DS_Store
