@@ -13,6 +13,8 @@
 ## 台電 API
 
 台電功率資料統一換算為 MW，可用 `date`、`start`、`end` 查詢歷史區間；
+日期參數一律使用台北日期的 `YYYY-MM-DD` 格式，例如
+`?start=2026-08-14&end=2026-08-21`，不需附帶時間或時區。
 各類別也提供 `/latest`：
 
 - `/taipower/power-snapshots`

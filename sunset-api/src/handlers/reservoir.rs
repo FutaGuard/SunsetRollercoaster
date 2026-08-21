@@ -3,7 +3,7 @@ use axum::{
     extract::{Path, Query, State},
     routing::get,
 };
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::NaiveDate;
 use serde::Deserialize;
 use sqlx::PgPool;
 use utoipa::IntoParams;
@@ -26,10 +26,10 @@ pub struct ReservoirListParams {
     /// Combine with `date` (without `name`) to get all reservoirs at one hourly snapshot.
     #[param(minimum = 0, maximum = 23)]
     pub hour: Option<i32>,
-    /// Inclusive lower bound on `recordTime` (RFC3339).
-    pub start: Option<DateTime<Utc>>,
-    /// Inclusive upper bound on `recordTime` (RFC3339).
-    pub end: Option<DateTime<Utc>>,
+    /// Inclusive local date lower bound on `recordTime` in Asia/Taipei (YYYY-MM-DD).
+    pub start: Option<NaiveDate>,
+    /// Inclusive local date upper bound on `recordTime` in Asia/Taipei (YYYY-MM-DD).
+    pub end: Option<NaiveDate>,
     #[param(default = 200, minimum = 1, maximum = 5000)]
     pub limit: Option<i64>,
     #[param(default = 0, minimum = 0)]
@@ -91,11 +91,15 @@ pub async fn list_reservoirs(
         idx += 1;
     }
     if params.start.is_some() {
-        sql.push_str(&format!(r#" AND "recordTime" >= ${idx}"#));
+        sql.push_str(&format!(
+            r#" AND ("recordTime" AT TIME ZONE '{TZ}')::date >= ${idx}"#
+        ));
         idx += 1;
     }
     if params.end.is_some() {
-        sql.push_str(&format!(r#" AND "recordTime" <= ${idx}"#));
+        sql.push_str(&format!(
+            r#" AND ("recordTime" AT TIME ZONE '{TZ}')::date <= ${idx}"#
+        ));
         idx += 1;
     }
 

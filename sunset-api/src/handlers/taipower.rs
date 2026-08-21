@@ -3,7 +3,7 @@ use axum::{
     extract::{Query, State},
     routing::get,
 };
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::NaiveDate;
 use serde::Deserialize;
 use sqlx::PgPool;
 use utoipa::IntoParams;
@@ -29,10 +29,10 @@ const GENERATOR_SELECT: &str = "id, published_at, sequence, category_code, categ
 pub struct TimeListParams {
     /// Exact local date in Asia/Taipei (YYYY-MM-DD).
     pub date: Option<NaiveDate>,
-    /// Inclusive UTC timestamp lower bound (RFC3339). Ignored when `date` is set.
-    pub start: Option<DateTime<Utc>>,
-    /// Inclusive UTC timestamp upper bound (RFC3339). Ignored when `date` is set.
-    pub end: Option<DateTime<Utc>>,
+    /// Inclusive local date lower bound in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.
+    pub start: Option<NaiveDate>,
+    /// Inclusive local date upper bound in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.
+    pub end: Option<NaiveDate>,
     #[param(default = 500, minimum = 1, maximum = 5000)]
     pub limit: Option<i64>,
     #[param(default = 0, minimum = 0)]
@@ -58,11 +58,15 @@ fn append_time_filters(sql: &mut String, params: &TimeListParams, column: &str) 
         index += 1;
     } else {
         if params.start.is_some() {
-            sql.push_str(&format!(" AND {column} >= ${index}"));
+            sql.push_str(&format!(
+                " AND ({column} AT TIME ZONE '{TZ}')::date >= ${index}"
+            ));
             index += 1;
         }
         if params.end.is_some() {
-            sql.push_str(&format!(" AND {column} <= ${index}"));
+            sql.push_str(&format!(
+                " AND ({column} AT TIME ZONE '{TZ}')::date <= ${index}"
+            ));
             index += 1;
         }
     }
@@ -412,8 +416,10 @@ pub async fn latest_operating_reserve(
 pub struct GeneratorListParams {
     /// Exact snapshot date in Asia/Taipei (YYYY-MM-DD).
     pub date: Option<NaiveDate>,
-    pub start: Option<DateTime<Utc>>,
-    pub end: Option<DateTime<Utc>>,
+    /// Inclusive local date lower bound in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.
+    pub start: Option<NaiveDate>,
+    /// Inclusive local date upper bound in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.
+    pub end: Option<NaiveDate>,
     /// Exact source category code, for example `lng`, `coal`, or `solar`.
     pub category_code: Option<String>,
     /// Exact generator or subtotal name.
@@ -458,11 +464,15 @@ pub async fn list_generators(
         index += 1;
     } else {
         if params.start.is_some() {
-            sql.push_str(&format!(" AND published_at >= ${index}"));
+            sql.push_str(&format!(
+                " AND (published_at AT TIME ZONE '{TZ}')::date >= ${index}"
+            ));
             index += 1;
         }
         if params.end.is_some() {
-            sql.push_str(&format!(" AND published_at <= ${index}"));
+            sql.push_str(&format!(
+                " AND (published_at AT TIME ZONE '{TZ}')::date <= ${index}"
+            ));
             index += 1;
         }
     }

@@ -350,21 +350,21 @@
           {
             "name": "start",
             "in": "query",
-            "description": "Inclusive lower bound on `recordTime` (RFC3339).",
+            "description": "Inclusive local date lower bound on `recordTime` in Asia/Taipei (YYYY-MM-DD).",
             "required": false,
             "schema": {
               "type": "string",
-              "format": "date-time"
+              "format": "date"
             }
           },
           {
             "name": "end",
             "in": "query",
-            "description": "Inclusive upper bound on `recordTime` (RFC3339).",
+            "description": "Inclusive local date upper bound on `recordTime` in Asia/Taipei (YYYY-MM-DD).",
             "required": false,
             "schema": {
               "type": "string",
-              "format": "date-time"
+              "format": "date"
             }
           },
           {
@@ -526,21 +526,21 @@
           {
             "name": "start",
             "in": "query",
-            "description": "Inclusive UTC timestamp lower bound (RFC3339). Ignored when `date` is set.",
+            "description": "Inclusive local date lower bound in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.",
             "required": false,
             "schema": {
               "type": "string",
-              "format": "date-time"
+              "format": "date"
             }
           },
           {
             "name": "end",
             "in": "query",
-            "description": "Inclusive UTC timestamp upper bound (RFC3339). Ignored when `date` is set.",
+            "description": "Inclusive local date upper bound in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.",
             "required": false,
             "schema": {
               "type": "string",
-              "format": "date-time"
+              "format": "date"
             }
           },
           {
@@ -634,21 +634,21 @@
           {
             "name": "start",
             "in": "query",
-            "description": "Inclusive UTC timestamp lower bound (RFC3339). Ignored when `date` is set.",
+            "description": "Inclusive local date lower bound in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.",
             "required": false,
             "schema": {
               "type": "string",
-              "format": "date-time"
+              "format": "date"
             }
           },
           {
             "name": "end",
             "in": "query",
-            "description": "Inclusive UTC timestamp upper bound (RFC3339). Ignored when `date` is set.",
+            "description": "Inclusive local date upper bound in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.",
             "required": false,
             "schema": {
               "type": "string",
-              "format": "date-time"
+              "format": "date"
             }
           },
           {
@@ -742,21 +742,21 @@
           {
             "name": "start",
             "in": "query",
-            "description": "Inclusive UTC timestamp lower bound (RFC3339). Ignored when `date` is set.",
+            "description": "Inclusive local date lower bound in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.",
             "required": false,
             "schema": {
               "type": "string",
-              "format": "date-time"
+              "format": "date"
             }
           },
           {
             "name": "end",
             "in": "query",
-            "description": "Inclusive UTC timestamp upper bound (RFC3339). Ignored when `date` is set.",
+            "description": "Inclusive local date upper bound in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.",
             "required": false,
             "schema": {
               "type": "string",
-              "format": "date-time"
+              "format": "date"
             }
           },
           {
@@ -850,19 +850,21 @@
           {
             "name": "start",
             "in": "query",
+            "description": "Inclusive local date lower bound in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.",
             "required": false,
             "schema": {
               "type": "string",
-              "format": "date-time"
+              "format": "date"
             }
           },
           {
             "name": "end",
             "in": "query",
+            "description": "Inclusive local date upper bound in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.",
             "required": false,
             "schema": {
               "type": "string",
-              "format": "date-time"
+              "format": "date"
             }
           },
           {
@@ -1083,21 +1085,21 @@
           {
             "name": "start",
             "in": "query",
-            "description": "Inclusive UTC timestamp lower bound (RFC3339). Ignored when `date` is set.",
+            "description": "Inclusive local date lower bound in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.",
             "required": false,
             "schema": {
               "type": "string",
-              "format": "date-time"
+              "format": "date"
             }
           },
           {
             "name": "end",
             "in": "query",
-            "description": "Inclusive UTC timestamp upper bound (RFC3339). Ignored when `date` is set.",
+            "description": "Inclusive local date upper bound in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.",
             "required": false,
             "schema": {
               "type": "string",
-              "format": "date-time"
+              "format": "date"
             }
           },
           {
