@@ -4,6 +4,8 @@ import re
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import httpx
+from loguru import logger
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -73,9 +75,11 @@ class NationwideFuelPriceCrawler(Crawler):
             existing.unleaded_95 = item.unleaded_95
             existing.unleaded_98 = item.unleaded_98
             existing.super_diesel = item.super_diesel
-            existing.west_texas = item.west_texas
-            existing.dubai = item.dubai
-            existing.brent = item.brent
+            # 原油可能比國內油價晚公布；缺值不可清掉已同步的歷史價格。
+            for field in ("west_texas", "dubai", "brent"):
+                price = getattr(item, field)
+                if price is not None:
+                    setattr(existing, field, price)
 
         await session.commit()
         return added
@@ -85,7 +89,7 @@ class NationwideFuelPriceCrawler(Crawler):
 
         latest_payload, latest_crude_payload = await asyncio.gather(
             self.query(self.LOAD_URL),
-            self.query(self.CRUDE_LOAD_URL),
+            self._fetch_crude_payload(self.CRUDE_LOAD_URL, {"unit": self.UNIT}),
         )
         if not full_history:
             return self._parse_combined(latest_payload, latest_crude_payload)
@@ -100,9 +104,18 @@ class NationwideFuelPriceCrawler(Crawler):
         }
         history_payload, crude_history_payload = await asyncio.gather(
             self._post_json(self.RANGE_URL, range_params),
-            self._post_json(self.CRUDE_RANGE_URL, range_params),
+            self._fetch_crude_payload(self.CRUDE_RANGE_URL, range_params),
         )
         return self._parse_combined(history_payload, crude_history_payload)
+
+    async def _fetch_crude_payload(
+        self, url: str, data: dict[str, str]
+    ) -> dict[str, Any] | None:
+        try:
+            return await self._post_json(url, data)
+        except (httpx.HTTPError, ValueError) as exc:
+            logger.warning("原油資料暫時無法取得，先同步國內油價：{}", exc)
+            return None
 
     async def _first_week_id(self) -> int:
         payload = await self._post_json(
@@ -168,17 +181,23 @@ class NationwideFuelPriceCrawler(Crawler):
     def _parse_combined(
         cls,
         fuel_payload: dict[str, Any],
-        crude_payload: dict[str, Any],
+        crude_payload: dict[str, Any] | None,
     ) -> list[NationwideFuelPrice]:
         results = cls._parse(fuel_payload)
-        crude_by_period = cls._parse_crude_prices(crude_payload)
+        try:
+            crude_by_period = (
+                cls._parse_crude_prices(crude_payload)
+                if crude_payload is not None
+                else {}
+            )
+        except ValueError as exc:
+            logger.warning("原油資料格式無效，先同步國內油價：{}", exc)
+            crude_by_period = {}
 
         for item in results:
             prices = crude_by_period.get((item.period_start, item.period_end))
-            if prices is None:
-                period = f"{item.period_start:%Y/%m/%d} ~ {item.period_end:%Y/%m/%d}"
-                raise ValueError(f"crude oil price response missing period: {period}")
-            item.west_texas, item.dubai, item.brent = prices
+            if prices is not None:
+                item.west_texas, item.dubai, item.brent = prices
 
         return results
 
