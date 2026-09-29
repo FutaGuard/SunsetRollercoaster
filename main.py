@@ -91,6 +91,8 @@ async def main():
             next_run_time=datetime.now(),
             max_instances=1,
             coalesce=True,
+            # 容器冷啟動可能超過預設的 1 秒，仍應執行首次同步。
+            misfire_grace_time=60,
         )
         logger.info(f"排程 {cls.__name__} 每 {cls.INTERVAL} 執行一次")
 
