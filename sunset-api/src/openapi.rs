@@ -3,8 +3,9 @@ use utoipa::OpenApi;
 use crate::error::ErrorBody;
 use crate::handlers;
 use crate::models::{
-    Invoice, NationwideFuelPrice, Reservoir, TaipowerAreaLoad, TaipowerAreaSnapshot,
-    TaipowerFuelMix, TaipowerGenerator, TaipowerOperatingReserve, TaipowerPowerSnapshot,
+    FinanceExchangeRate, Invoice, LiveExchangeRate, NationwideFuelPrice, Reservoir,
+    TaipowerAreaLoad, TaipowerAreaSnapshot, TaipowerFuelMix, TaipowerGenerator,
+    TaipowerOperatingReserve, TaipowerPowerSnapshot,
 };
 
 #[derive(OpenApi)]
@@ -12,9 +13,11 @@ use crate::models::{
     info(
         title = "Sunset Rollercoaster API",
         version = "0.1.0",
-        description = "Read-only REST API for Taipower electricity data, Taiwan and international fuel prices, invoice draws, and reservoir records."
+        description = "Read-only REST API for Taipower electricity data, Taiwan and international fuel prices, exchange rates, invoice draws, and reservoir records."
     ),
     paths(
+        handlers::finance::list_exchange_rates,
+        handlers::finance::latest_exchange_rates,
         handlers::fuel_price::list_fuel_prices,
         handlers::fuel_price::latest_fuel_price,
         handlers::fuel_price::get_fuel_price,
@@ -39,6 +42,8 @@ use crate::models::{
         handlers::taipower::latest_generators,
     ),
     components(schemas(
+        FinanceExchangeRate,
+        LiveExchangeRate,
         NationwideFuelPrice,
         Invoice,
         Reservoir,
@@ -51,6 +56,7 @@ use crate::models::{
         ErrorBody
     )),
     tags(
+        (name = "finance", description = "Exchange rates from Google Finance; `rate` is the amount of `quote` (TWD) for one unit of `base`"),
         (name = "fuel-prices", description = "Weekly Taiwan fuel and international crude oil prices"),
         (name = "invoices", description = "Taiwan uniform invoice winning numbers"),
         (name = "reservoirs", description = "Taiwan reservoir water level records"),

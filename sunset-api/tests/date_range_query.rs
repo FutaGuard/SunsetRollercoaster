@@ -1,5 +1,6 @@
 use axum::{extract::Query, http::Uri};
 use sunset_api::handlers::{
+    finance::ExchangeRateListParams,
     fuel_price::FuelPriceListParams,
     invoice::InvoiceListParams,
     reservoir::ReservoirListParams,
@@ -50,6 +51,8 @@ fn existing_date_range_endpoints_keep_accepting_date_only_ranges() {
     let Query(fuel_prices) =
         Query::<FuelPriceListParams>::try_from_uri(&uri("/fuel-prices")).unwrap();
     let Query(invoices) = Query::<InvoiceListParams>::try_from_uri(&uri("/invoices")).unwrap();
+    let Query(exchange_rates) =
+        Query::<ExchangeRateListParams>::try_from_uri(&uri("/finance/exchange-rates")).unwrap();
     let Query(reserves) =
         Query::<ReserveListParams>::try_from_uri(&uri("/taipower/operating-reserves")).unwrap();
 
@@ -72,6 +75,16 @@ fn existing_date_range_endpoints_keep_accepting_date_only_ranges() {
     );
     assert_eq!(
         (text(reserves.start.as_ref()), text(reserves.end.as_ref())),
+        (
+            Some("2026-08-14".to_string()),
+            Some("2026-08-21".to_string())
+        )
+    );
+    assert_eq!(
+        (
+            text(exchange_rates.start.as_ref()),
+            text(exchange_rates.end.as_ref())
+        ),
         (
             Some("2026-08-14".to_string()),
             Some("2026-08-21".to_string())
@@ -105,7 +118,7 @@ fn openapi_describes_every_date_range_as_date_only() {
 
     assert_eq!(
         checked.len(),
-        18,
-        "expected start/end on nine list endpoints"
+        20,
+        "expected start/end on ten list endpoints"
     );
 }

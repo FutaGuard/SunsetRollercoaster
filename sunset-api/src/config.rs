@@ -51,10 +51,18 @@ fn default_port() -> u16 {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct FinanceConfig {
+    /// Apps Script Web App URL; kept in env_config.yml, never in the repo.
+    pub exchange_rate_url: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct AppConfig {
     pub database: DatabaseConfig,
     #[serde(default)]
     pub server: ServerConfig,
+    #[serde(default)]
+    pub finance: Option<FinanceConfig>,
 }
 
 impl AppConfig {

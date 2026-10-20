@@ -6,6 +6,11 @@ database:
   # Alembic automatically renames the legacy taiwanreservoir database.
   name: sunset
 
+# Apps Script Web App (apps-script/finance) serving GOOGLEFINANCE exchange rates.
+# Used by the Python crawler and sunset-api. Keep the real URL out of the repo.
+finance:
+  exchange_rate_url: https://script.google.com/macros/s/<deployment-id>/exec
+
 # Optional. Consumed only by sunset-api (Rust). Defaults: 0.0.0.0:8080.
 server:
   host: 0.0.0.0

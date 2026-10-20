@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{Json, Router, response::Html, routing::get};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
@@ -5,6 +7,7 @@ use tracing_subscriber::{EnvFilter, fmt};
 use utoipa::OpenApi;
 
 use sunset_api::config::AppConfig;
+use sunset_api::exchange_rate::{CACHE_TTL, ExchangeRateCache};
 use sunset_api::openapi::ApiDoc;
 use sunset_api::{db, handlers};
 
@@ -18,8 +21,13 @@ async fn main() -> anyhow::Result<()> {
 
     let cfg = AppConfig::load()?;
     let pool = db::create_pool(&cfg.database).await?;
+    let exchange_rates = Arc::new(ExchangeRateCache::new(
+        cfg.finance.map(|finance| finance.exchange_rate_url),
+        CACHE_TTL,
+    )?);
 
     let api = Router::new()
+        .merge(handlers::finance::router(exchange_rates))
         .merge(handlers::fuel_price::router())
         .merge(handlers::invoice::router())
         .merge(handlers::reservoir::router())

@@ -22,8 +22,14 @@ class DatabaseConfig(BaseModel):
         )
 
 
+class FinanceConfig(BaseModel):
+    # Apps Script Web App 網址只放在 env_config.yml，不進 repo。
+    exchange_rate_url: str
+
+
 class Config(BaseModel):
     database: DatabaseConfig
+    finance: FinanceConfig | None = None
 
 
 _CONFIG_PATH = Path(__file__).resolve().parent.parent / "env_config.yml"

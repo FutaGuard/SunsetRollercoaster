@@ -5,6 +5,7 @@
 
 # 資料  
 - [x] 台灣電力公司（今日電力、燃料別與區域曲線、備轉容量、各機組發電量）
+- [x] 匯率（Google Finance，19 種幣別對新台幣）
 - [ ] 統一發票
 - [ ] 台灣水庫
 - [ ] 台灣中油
@@ -30,6 +31,26 @@
 - `/taipower/generators`
 
 完整參數與回應 schema 請見 `/swagger-ui`。
+
+## 匯率
+
+匯率來自 Google 試算表的 `GOOGLEFINANCE`，由 `apps-script/finance/` 的 Apps Script
+Web App 以 JSON 提供。幣別與臺灣銀行牌告匯率一致，`rate` 為 1 單位 `base`
+可兌換的新台幣。
+
+- `/finance/exchange-rates/latest`：sunset-api 直接向 Apps Script 取得即時匯率，
+  於記憶體快取 180 秒；快取期間內不會再呼叫 Google。來源失敗回 502、未設定回 503。
+- `/finance/exchange-rates`：crawler 每小時寫入資料庫的歷史紀錄，可用 `base`
+  （例如 `USD`）、`date`、`start`、`end` 篩選。GOOGLEFINANCE 的歷史資料無法從
+  Apps Script 讀取，歷史紀錄完全靠定時同步累積。
+
+Web App 網址只設定在 `env_config.yml` 的 `finance.exchange_rate_url`，crawler
+與 sunset-api 共用，不放進 repo；`apps-script/finance/.clasp.json`（含 scriptId）
+同樣被 git 忽略，需自行保留或以 `clasp clone <scriptId>` 重建。
+
+修改 Apps Script 後，在 `apps-script/finance/` 執行 `clasp push`，再用
+`clasp redeploy <deployment-id>` 更新既有部署，網址才會維持不變。新增 OAuth
+權限時，需先在 Apps Script 編輯器執行一次 `checkRates` 重新授權。
 
 ## 資料庫遷移
 

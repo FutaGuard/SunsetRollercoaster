@@ -15,6 +15,8 @@ pub enum ApiError {
     #[error(transparent)]
     Sqlx(#[from] sqlx::Error),
     #[error(transparent)]
+    ExchangeRate(#[from] crate::exchange_rate::ExchangeRateError),
+    #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
 
@@ -34,6 +36,13 @@ impl IntoResponse for ApiError {
             ApiError::Sqlx(e) => {
                 tracing::error!(error = ?e, "sqlx error");
                 (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+            }
+            ApiError::ExchangeRate(crate::exchange_rate::ExchangeRateError::NotConfigured) => {
+                (StatusCode::SERVICE_UNAVAILABLE, self.to_string())
+            }
+            ApiError::ExchangeRate(e) => {
+                tracing::error!(error = ?e, "exchange rate source error");
+                (StatusCode::BAD_GATEWAY, e.to_string())
             }
             ApiError::Other(e) => {
                 tracing::error!(error = ?e, "internal error");

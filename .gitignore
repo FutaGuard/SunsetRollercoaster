@@ -2,6 +2,8 @@
 taipower/target/
 env_config.yml
 key.key
+# clasp 專案設定含 scriptId 與試算表 ID，不進 repo。
+apps-script/**/.clasp.json
 
 __pycache__/
 .DS_Store

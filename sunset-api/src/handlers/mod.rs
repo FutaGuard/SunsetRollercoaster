@@ -1,3 +1,4 @@
+pub mod finance;
 pub mod fuel_price;
 pub mod invoice;
 pub mod reservoir;

@@ -16,6 +16,7 @@ from alembic import command
 from sunsetRollercoaster import models  # noqa: F401  載入 metadata
 from sunsetRollercoaster.config import get_config
 from sunsetRollercoaster.crawler._crawler import Crawler
+from sunsetRollercoaster.crawler.finance import FinanceExchangeRateCrawler
 from sunsetRollercoaster.crawler.fuel_price import NationwideFuelPriceCrawler
 from sunsetRollercoaster.crawler.invoice import InvoiceCrawler
 from sunsetRollercoaster.crawler.reservoir import ReservoirCrawler
@@ -36,6 +37,7 @@ CRAWLERS: list[Type[Crawler]] = [
     TaipowerAreaCrawler,
     TaipowerOperatingReserveCrawler,
     TaipowerGeneratorCrawler,
+    FinanceExchangeRateCrawler,
 ]
 
 PROJECT_ROOT = Path(__file__).resolve().parent

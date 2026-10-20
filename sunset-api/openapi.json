@@ -2,13 +2,153 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Sunset Rollercoaster API",
-    "description": "Read-only REST API for Taipower electricity data, Taiwan and international fuel prices, invoice draws, and reservoir records.",
+    "description": "Read-only REST API for Taipower electricity data, Taiwan and international fuel prices, exchange rates, invoice draws, and reservoir records.",
     "license": {
       "name": ""
     },
     "version": "0.1.0"
   },
   "paths": {
+    "/finance/exchange-rates": {
+      "get": {
+        "tags": [
+          "finance"
+        ],
+        "operationId": "list_exchange_rates",
+        "parameters": [
+          {
+            "name": "base",
+            "in": "query",
+            "description": "ISO 4217 base currency, case-insensitive (for example, `USD`).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Exact local date in Asia/Taipei (YYYY-MM-DD).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Inclusive local date lower bound in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "Inclusive local date upper bound in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 500,
+              "maximum": 5000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List exchange rate snapshots, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FinanceExchangeRate"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid base currency",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/exchange-rates/latest": {
+      "get": {
+        "tags": [
+          "finance"
+        ],
+        "operationId": "latest_exchange_rates",
+        "responses": {
+          "200": {
+            "description": "Real-time rate for each currency pair from Google Finance, cached in memory for 180 seconds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LiveExchangeRate"
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Exchange rate source failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Exchange rate source not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/fuel-prices": {
       "get": {
         "tags": [
@@ -1187,6 +1327,39 @@
           }
         }
       },
+      "FinanceExchangeRate": {
+        "type": "object",
+        "required": [
+          "id",
+          "base",
+          "quote",
+          "rate",
+          "observed_at"
+        ],
+        "properties": {
+          "base": {
+            "type": "string",
+            "description": "ISO 4217 currency being priced (for example, `USD`)."
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "quote": {
+            "type": "string",
+            "description": "ISO 4217 currency the rate is expressed in; currently always `TWD`."
+          },
+          "rate": {
+            "type": "number",
+            "format": "double",
+            "description": "Amount of `quote` for one unit of `base`, from Google Finance."
+          }
+        }
+      },
       "Invoice": {
         "type": "object",
         "required": [
@@ -1219,6 +1392,36 @@
           "special_prize": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "LiveExchangeRate": {
+        "type": "object",
+        "description": "Real-time rate fetched from the Apps Script source and cached in memory.",
+        "required": [
+          "base",
+          "quote",
+          "rate",
+          "observed_at"
+        ],
+        "properties": {
+          "base": {
+            "type": "string",
+            "description": "ISO 4217 currency being priced (for example, `USD`)."
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the Apps Script source read the rates."
+          },
+          "quote": {
+            "type": "string",
+            "description": "ISO 4217 currency the rate is expressed in; currently always `TWD`."
+          },
+          "rate": {
+            "type": "number",
+            "format": "double",
+            "description": "Amount of `quote` for one unit of `base`, from Google Finance."
           }
         }
       },
@@ -1832,6 +2035,10 @@
     }
   },
   "tags": [
+    {
+      "name": "finance",
+      "description": "Exchange rates from Google Finance; `rate` is the amount of `quote` (TWD) for one unit of `base`"
+    },
     {
       "name": "fuel-prices",
       "description": "Weekly Taiwan fuel and international crude oil prices"
