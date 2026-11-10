@@ -3,10 +3,10 @@
 
 const SHEET_NAME = 'rates';
 const QUOTE = 'TWD';
-// 與臺灣銀行牌告匯率的 19 種幣別一致。
+// 臺灣銀行牌告匯率的 19 種幣別，另加 TRY。
 const BASES = [
   'USD', 'HKD', 'GBP', 'AUD', 'CAD', 'SGD', 'CHF', 'JPY', 'ZAR', 'SEK',
-  'NZD', 'THB', 'PHP', 'IDR', 'EUR', 'KRW', 'VND', 'MYR', 'CNY',
+  'NZD', 'THB', 'PHP', 'IDR', 'EUR', 'KRW', 'VND', 'MYR', 'CNY', 'TRY',
 ];
 const MAX_ATTEMPTS = 5;
 const LOCK_TIMEOUT_MS = 30000;
