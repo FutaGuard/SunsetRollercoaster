@@ -38,8 +38,11 @@
 Web App 以 JSON 提供。幣別與臺灣銀行牌告匯率一致，`rate` 為 1 單位 `base`
 可兌換的新台幣。
 
-- `/finance/exchange-rates/latest`：sunset-api 直接向 Apps Script 取得即時匯率，
-  於記憶體快取 180 秒；快取期間內不會再呼叫 Google。來源失敗回 502、未設定回 503。
+- `/finance/exchange-rates/latest`：最近一次成功抓取後的 180 秒內直接回快取。
+  之後的第一個請求觸發背景更新；只要距離來源的 `observed_at` 未滿 10 分鐘，
+  就立即回傳上一份匯率及原始時間。每個 API 程序同時只抓一次，更新失敗不會延長舊資料期限。
+  冷啟動或資料已達 10 分鐘時，請求最多等 5 秒；來源失敗、回傳過期資料或仍未完成時回 502。
+  請求結束不會取消背景更新；未設定來源回 503。
 - `/finance/exchange-rates`：crawler 每小時寫入資料庫的歷史紀錄，可用 `base`
   （例如 `USD`）、`date`、`start`、`end` 篩選。GOOGLEFINANCE 的歷史資料無法從
   Apps Script 讀取，歷史紀錄完全靠定時同步累積。

@@ -128,8 +128,8 @@ pub async fn list_exchange_rates(
     path = "/finance/exchange-rates/latest",
     tag = "finance",
     responses(
-        (status = 200, description = "Real-time rate for each currency pair from Google Finance, cached in memory for 180 seconds", body = [LiveExchangeRate]),
-        (status = 502, description = "Exchange rate source failed", body = crate::error::ErrorBody),
+        (status = 200, description = "Rates with original observed_at; refreshed on demand after 180 seconds. While refreshing, serves the last snapshot if under 10 minutes old.", body = [LiveExchangeRate]),
+        (status = 502, description = "No usable snapshot and the source failed or did not supply one within 5 seconds.", body = crate::error::ErrorBody),
         (status = 503, description = "Exchange rate source not configured", body = crate::error::ErrorBody)
     )
 )]

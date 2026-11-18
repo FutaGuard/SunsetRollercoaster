@@ -114,7 +114,7 @@
         "operationId": "latest_exchange_rates",
         "responses": {
           "200": {
-            "description": "Real-time rate for each currency pair from Google Finance, cached in memory for 180 seconds",
+            "description": "Rates with original observed_at; refreshed on demand after 180 seconds. While refreshing, serves the last snapshot if under 10 minutes old.",
             "content": {
               "application/json": {
                 "schema": {
@@ -127,7 +127,7 @@
             }
           },
           "502": {
-            "description": "Exchange rate source failed",
+            "description": "No usable snapshot and the source failed or did not supply one within 5 seconds.",
             "content": {
               "application/json": {
                 "schema": {
