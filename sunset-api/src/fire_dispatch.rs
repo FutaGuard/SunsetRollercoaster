@@ -1,7 +1,7 @@
 //! Live fire department dispatch cases (消防局即時案件) read from each county's public
 //! case list, normalized to one shape and cached in memory per county.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -12,6 +12,7 @@ use tokio::sync::Mutex;
 use tokio::task::JoinSet;
 use tokio::time::Instant;
 
+use crate::config::FireDispatchConfig;
 use crate::models::{FireDispatchCase, FireDispatchCounty, FireDispatchCountyInfo};
 
 const CACHE_TTL: Duration = Duration::from_secs(60);
@@ -201,24 +202,70 @@ struct Snapshot {
     county: Arc<FireDispatchCounty>,
 }
 
+/// URL-prefix forwarding proxy, as configured in `fire_dispatch`.
+struct Proxy {
+    url: String,
+    basic_auth: Option<(String, String)>,
+    counties: HashSet<&'static str>,
+}
+
+impl Proxy {
+    fn from_config(config: FireDispatchConfig) -> anyhow::Result<Self> {
+        let counties = config
+            .proxy_counties
+            .iter()
+            .map(|code| {
+                COUNTIES
+                    .iter()
+                    .find(|county| county.code == code.as_str())
+                    .map(|county| county.code)
+                    .ok_or_else(|| {
+                        anyhow::anyhow!("fire_dispatch.proxy_counties: unknown county `{code}`")
+                    })
+            })
+            .collect::<anyhow::Result<_>>()?;
+        let basic_auth = config
+            .proxy_basic_auth
+            .map(|auth| {
+                auth.split_once(':')
+                    .map(|(user, password)| (user.to_string(), password.to_string()))
+                    .ok_or_else(|| {
+                        anyhow::anyhow!("fire_dispatch.proxy_basic_auth must be `user:password`")
+                    })
+            })
+            .transpose()?;
+        Ok(Self {
+            url: config.proxy_url.trim_end_matches('/').to_string(),
+            basic_auth,
+            counties,
+        })
+    }
+}
+
 pub struct FireDispatchCache {
     client: reqwest::Client,
+    proxy: Option<Proxy>,
     /// One lock per county: concurrent misses share a single source request.
     entries: HashMap<&'static str, Mutex<Option<Snapshot>>>,
 }
 
 impl FireDispatchCache {
-    pub fn new() -> anyhow::Result<Self> {
+    pub fn new(config: Option<FireDispatchConfig>) -> anyhow::Result<Self> {
         let client = reqwest::Client::builder()
             .timeout(REQUEST_TIMEOUT)
             .user_agent(USER_AGENT)
             .add_root_certificate(reqwest::Certificate::from_pem(TWCA_CYBER_ROOT_CA)?)
             .build()?;
+        let proxy = config.map(Proxy::from_config).transpose()?;
         let entries = COUNTIES
             .iter()
             .map(|county| (county.code, Mutex::default()))
             .collect();
-        Ok(Self { client, entries })
+        Ok(Self {
+            client,
+            proxy,
+            entries,
+        })
     }
 
     /// Cases of one county; failed source requests are not cached.
@@ -282,15 +329,33 @@ impl FireDispatchCache {
     }
 
     async fn fetch(&self, county: &County) -> Result<Vec<FireDispatchCase>, FireDispatchError> {
-        let request = match county.format {
+        let proxy = self
+            .proxy
+            .as_ref()
+            .filter(|proxy| proxy.counties.contains(county.code));
+        let url = match proxy {
+            Some(proxy) => format!("{}/{}", proxy.url, county.url),
+            None => county.url.to_string(),
+        };
+        let mut request = match county.format {
             // The `t` cache-buster mirrors the Taipei page's own request.
             SourceFormat::TaipeiJson => self
                 .client
-                .post(county.url)
+                .post(&url)
                 .form(&[("t", Utc::now().timestamp_millis().to_string())]),
-            SourceFormat::Grid | SourceFormat::NewTaipeiJson => self.client.get(county.url),
+            SourceFormat::Grid | SourceFormat::NewTaipeiJson => self.client.get(&url),
         };
-        let body = request.send().await?.error_for_status()?.text().await?;
+        if let Some((user, password)) = proxy.and_then(|proxy| proxy.basic_auth.as_ref()) {
+            request = request.basic_auth(user, Some(password));
+        }
+        let body = send(request).await.map_err(|error| {
+            // The proxy URL may carry credentials; never echo it in errors or logs.
+            if proxy.is_some() {
+                error.without_url()
+            } else {
+                error
+            }
+        })?;
         let now = Utc::now();
         let mut cases = match county.format {
             SourceFormat::Grid => parse_grid(&body, now)?,
@@ -301,6 +366,10 @@ impl FireDispatchCache {
         cases.sort_by(|a, b| b.received_at.cmp(&a.received_at));
         Ok(cases)
     }
+}
+
+async fn send(request: reqwest::RequestBuilder) -> reqwest::Result<String> {
+    request.send().await?.error_for_status()?.text().await
 }
 
 /// Parses an HTML case list whose header row names the columns.

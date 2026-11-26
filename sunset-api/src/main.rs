@@ -26,7 +26,7 @@ async fn main() -> anyhow::Result<()> {
         cfg.finance.map(|finance| finance.exchange_rate_url),
         CACHE_TTL,
     )?);
-    let fire_dispatch = Arc::new(FireDispatchCache::new()?);
+    let fire_dispatch = Arc::new(FireDispatchCache::new(cfg.fire_dispatch)?);
 
     let api = Router::new()
         .merge(handlers::finance::router(exchange_rates))

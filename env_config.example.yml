@@ -11,6 +11,14 @@ database:
 finance:
   exchange_rate_url: https://script.google.com/macros/s/<deployment-id>/exec
 
+# Optional. sunset-api fetches these counties' fire dispatch case lists through a
+# URL-prefix proxy (`<proxy_url>/<source url>`, same as the Apps Script PROXY_URL),
+# for sites that refuse the API host's network. Keep the real URL out of the repo.
+fire_dispatch:
+  proxy_url: https://<proxy-host>
+  proxy_basic_auth: user:password
+  proxy_counties: [kaohsiung, hsinchu-city, chiayi-city]
+
 # Optional. Consumed only by sunset-api (Rust). Defaults: 0.0.0.0:8080.
 server:
   host: 0.0.0.0

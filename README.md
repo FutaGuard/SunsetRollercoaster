@@ -75,6 +75,12 @@ sunset-api 直接讀取 18 個縣市消防局公開的即時案件列表（不�
 `sunset-api/certs/twca-cyber-root-ca.pem` 只加入這個 API 的抓取用連線，
 SHA-256 指紋與 TWCA 2025 年 WebTrust 稽核報告列出的一致。
 
+高雄、新竹市、嘉義市的消防局擋掉部署主機所在的機房網段（TCP 連線逾時，從家用網路連得上）。
+在 `env_config.yml` 設定 `fire_dispatch`（見 `env_config.example.yml`）後，
+`proxy_counties` 列出的縣市改走與 Apps Script `PROXY_URL` 相同的網址前綴代理
+（`<proxy_url>/<來源網址>`，Basic Auth 用 `proxy_basic_auth`），其他縣市照常直連。
+代理網址與帳密只放在 `env_config.yml`，API 錯誤訊息與 log 不會帶出代理網址。
+
 ## 資料庫遷移
 
 資料庫名稱為 `sunset`。從舊版升級時，先將 `env_config.yml` 的

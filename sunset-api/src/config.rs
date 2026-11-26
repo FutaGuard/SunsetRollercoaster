@@ -56,6 +56,18 @@ pub struct FinanceConfig {
     pub exchange_rate_url: String,
 }
 
+/// Forwarding proxy for county case lists that block the API host's network, in the same
+/// URL-prefix form as the Apps Script `PROXY_URL`: requests go to `<proxy_url>/<source url>`.
+#[derive(Debug, Clone, Deserialize)]
+pub struct FireDispatchConfig {
+    pub proxy_url: String,
+    /// `user:password` for the proxy's Basic auth (the Apps Script `BASIC_AUTH`).
+    #[serde(default)]
+    pub proxy_basic_auth: Option<String>,
+    /// County codes fetched through the proxy; every other county is fetched directly.
+    pub proxy_counties: Vec<String>,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct AppConfig {
     pub database: DatabaseConfig,
@@ -63,6 +75,8 @@ pub struct AppConfig {
     pub server: ServerConfig,
     #[serde(default)]
     pub finance: Option<FinanceConfig>,
+    #[serde(default)]
+    pub fire_dispatch: Option<FireDispatchConfig>,
 }
 
 impl AppConfig {
