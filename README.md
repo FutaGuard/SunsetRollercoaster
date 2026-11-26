@@ -6,6 +6,7 @@
 # 資料  
 - [x] 台灣電力公司（今日電力、燃料別與區域曲線、備轉容量、各機組發電量）
 - [x] 匯率（Google Finance，20 種幣別對新台幣）
+- [x] 消防局即時案件（18 縣市，依縣市分組）
 - [ ] 統一發票
 - [ ] 台灣水庫
 - [ ] 台灣中油
@@ -54,6 +55,25 @@ Web App 網址只設定在 `env_config.yml` 的 `finance.exchange_rate_url`，cr
 修改 Apps Script 後，在 `apps-script/finance/` 執行 `clasp push`，再用
 `clasp redeploy <deployment-id>` 更新既有部署，網址才會維持不變。新增 OAuth
 權限時，需先在 Apps Script 編輯器執行一次 `checkRates` 重新授權。
+
+## 消防局即時案件
+
+sunset-api 直接讀取 18 個縣市消防局公開的即時案件列表（不經資料庫），統一成同一種格式：
+
+- `/fire-dispatch/counties`：縣市代碼、名稱與來源網址。
+- `/fire-dispatch/latest`：全部縣市，依縣市分組。各縣市同時抓取；某縣市來源失敗時，
+  該縣市帶 `error` 且 `cases` 為空，不影響其他縣市。
+- `/fire-dispatch/latest/{county}`：單一縣市，例如 `/fire-dispatch/latest/tainan`。
+  未知代碼回 404，來源失敗或頁面格式無法辨識回 502。
+
+每筆案件為 `received_at`、`category`（`案類-案別`）、`location`、`unit`、`status`、
+`case_id`、`latitude`、`longitude`，來源沒有的欄位為 `null`。只保留 6 小時內受理的案件
+（列表常殘留舊案或範例資料）；新北來源沒有受理時間，`received_at` 為 `null`，
+但有車輛與座標。每個縣市的結果快取 60 秒，同時進來的請求共用一次抓取。
+
+南投消防局憑證鏈到 TWCA CYBER Root CA，不在內建根憑證中；
+`sunset-api/certs/twca-cyber-root-ca.pem` 只加入這個 API 的抓取用連線，
+SHA-256 指紋與 TWCA 2025 年 WebTrust 稽核報告列出的一致。
 
 ## 資料庫遷移
 

@@ -8,6 +8,7 @@ use utoipa::OpenApi;
 
 use sunset_api::config::AppConfig;
 use sunset_api::exchange_rate::{CACHE_TTL, ExchangeRateCache};
+use sunset_api::fire_dispatch::FireDispatchCache;
 use sunset_api::openapi::ApiDoc;
 use sunset_api::{db, handlers};
 
@@ -25,9 +26,11 @@ async fn main() -> anyhow::Result<()> {
         cfg.finance.map(|finance| finance.exchange_rate_url),
         CACHE_TTL,
     )?);
+    let fire_dispatch = Arc::new(FireDispatchCache::new()?);
 
     let api = Router::new()
         .merge(handlers::finance::router(exchange_rates))
+        .merge(handlers::fire_dispatch::router(fire_dispatch))
         .merge(handlers::fuel_price::router())
         .merge(handlers::invoice::router())
         .merge(handlers::reservoir::router())

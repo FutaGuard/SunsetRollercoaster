@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Sunset Rollercoaster API",
-    "description": "Read-only REST API for Taipower electricity data, Taiwan and international fuel prices, exchange rates, invoice draws, and reservoir records.",
+    "description": "Read-only REST API for Taipower electricity data, Taiwan and international fuel prices, exchange rates, live fire department dispatch cases, invoice draws, and reservoir records.",
     "license": {
       "name": ""
     },
@@ -138,6 +138,103 @@
           },
           "503": {
             "description": "Exchange rate source not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fire-dispatch/counties": {
+      "get": {
+        "tags": [
+          "fire-dispatch"
+        ],
+        "operationId": "list_counties",
+        "responses": {
+          "200": {
+            "description": "Supported counties and the case list each is read from",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FireDispatchCountyInfo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fire-dispatch/latest": {
+      "get": {
+        "tags": [
+          "fire-dispatch"
+        ],
+        "operationId": "latest_all",
+        "responses": {
+          "200": {
+            "description": "Live cases grouped by county, fetched concurrently and cached 60 seconds per county. A county whose source failed has `error` set and no cases.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FireDispatchCounty"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fire-dispatch/latest/{county}": {
+      "get": {
+        "tags": [
+          "fire-dispatch"
+        ],
+        "operationId": "latest_county",
+        "parameters": [
+          {
+            "name": "county",
+            "in": "path",
+            "description": "County code from `/fire-dispatch/counties`, for example `tainan`",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live cases of one county, cached 60 seconds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FireDispatchCounty"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown county code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The county's source failed or returned an unrecognized page",
             "content": {
               "application/json": {
                 "schema": {
@@ -1360,6 +1457,134 @@
           }
         }
       },
+      "FireDispatchCase": {
+        "type": "object",
+        "description": "One live case from a county fire department's public case list.",
+        "required": [
+          "category",
+          "location"
+        ],
+        "properties": {
+          "case_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Source case number, when published (Tainan, New Taipei)."
+          },
+          "category": {
+            "type": "string",
+            "description": "Case category, joined as `案類-案別` when the source splits them (for example, `緊急救護-車禍`)."
+          },
+          "latitude": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "WGS84 latitude, when published (New Taipei)."
+          },
+          "location": {
+            "type": "string",
+            "description": "Incident location as published; ambulance cases are often truncated to the district."
+          },
+          "longitude": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "WGS84 longitude, when published (New Taipei)."
+          },
+          "received_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the dispatch center received the case; null when the source omits it (New Taipei)."
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Current status (執行狀況), for example `已出動`, when published."
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Dispatched station or vehicles (派遣分隊), when published."
+          }
+        }
+      },
+      "FireDispatchCounty": {
+        "type": "object",
+        "description": "Live cases of one county, fetched on demand and cached for 60 seconds.",
+        "required": [
+          "code",
+          "name",
+          "source_url",
+          "cases"
+        ],
+        "properties": {
+          "cases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FireDispatchCase"
+            },
+            "description": "Cases received in the last 6 hours, newest first; cases without `received_at` last."
+          },
+          "code": {
+            "type": "string"
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why the source could not be read (only in `/fire-dispatch/latest`); `cases` is then empty."
+          },
+          "fetched_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the source was read; null when the request failed."
+          },
+          "name": {
+            "type": "string"
+          },
+          "source_url": {
+            "type": "string"
+          }
+        }
+      },
+      "FireDispatchCountyInfo": {
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "source_url"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "County code used in `/fire-dispatch/latest/{county}` (for example, `tainan`)."
+          },
+          "name": {
+            "type": "string",
+            "description": "County name (for example, `臺南市`)."
+          },
+          "source_url": {
+            "type": "string",
+            "description": "Fire department case list the cases are read from."
+          }
+        }
+      },
       "Invoice": {
         "type": "object",
         "required": [
@@ -2038,6 +2263,10 @@
     {
       "name": "finance",
       "description": "Exchange rates from Google Finance; `rate` is the amount of `quote` (TWD) for one unit of `base`"
+    },
+    {
+      "name": "fire-dispatch",
+      "description": "Live cases from 18 county fire departments' public case lists, grouped by county"
     },
     {
       "name": "fuel-prices",

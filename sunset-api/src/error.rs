@@ -17,6 +17,8 @@ pub enum ApiError {
     #[error(transparent)]
     ExchangeRate(#[from] crate::exchange_rate::ExchangeRateError),
     #[error(transparent)]
+    FireDispatch(#[from] crate::fire_dispatch::FireDispatchError),
+    #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
 
@@ -44,6 +46,10 @@ impl IntoResponse for ApiError {
                 tracing::error!(error = ?e, "exchange rate source error");
                 (StatusCode::BAD_GATEWAY, e.to_string())
             }
+            ApiError::FireDispatch(crate::fire_dispatch::FireDispatchError::UnknownCounty(_)) => {
+                (StatusCode::NOT_FOUND, self.to_string())
+            }
+            ApiError::FireDispatch(e) => (StatusCode::BAD_GATEWAY, e.to_string()),
             ApiError::Other(e) => {
                 tracing::error!(error = ?e, "internal error");
                 (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())

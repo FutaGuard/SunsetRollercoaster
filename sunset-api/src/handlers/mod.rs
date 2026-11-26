@@ -1,4 +1,5 @@
 pub mod finance;
+pub mod fire_dispatch;
 pub mod fuel_price;
 pub mod invoice;
 pub mod reservoir;

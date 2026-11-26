@@ -3,9 +3,9 @@ use utoipa::OpenApi;
 use crate::error::ErrorBody;
 use crate::handlers;
 use crate::models::{
-    FinanceExchangeRate, Invoice, LiveExchangeRate, NationwideFuelPrice, Reservoir,
-    TaipowerAreaLoad, TaipowerAreaSnapshot, TaipowerFuelMix, TaipowerGenerator,
-    TaipowerOperatingReserve, TaipowerPowerSnapshot,
+    FinanceExchangeRate, FireDispatchCase, FireDispatchCounty, FireDispatchCountyInfo, Invoice,
+    LiveExchangeRate, NationwideFuelPrice, Reservoir, TaipowerAreaLoad, TaipowerAreaSnapshot,
+    TaipowerFuelMix, TaipowerGenerator, TaipowerOperatingReserve, TaipowerPowerSnapshot,
 };
 
 #[derive(OpenApi)]
@@ -13,11 +13,14 @@ use crate::models::{
     info(
         title = "Sunset Rollercoaster API",
         version = "0.1.0",
-        description = "Read-only REST API for Taipower electricity data, Taiwan and international fuel prices, exchange rates, invoice draws, and reservoir records."
+        description = "Read-only REST API for Taipower electricity data, Taiwan and international fuel prices, exchange rates, live fire department dispatch cases, invoice draws, and reservoir records."
     ),
     paths(
         handlers::finance::list_exchange_rates,
         handlers::finance::latest_exchange_rates,
+        handlers::fire_dispatch::list_counties,
+        handlers::fire_dispatch::latest_all,
+        handlers::fire_dispatch::latest_county,
         handlers::fuel_price::list_fuel_prices,
         handlers::fuel_price::latest_fuel_price,
         handlers::fuel_price::get_fuel_price,
@@ -44,6 +47,9 @@ use crate::models::{
     components(schemas(
         FinanceExchangeRate,
         LiveExchangeRate,
+        FireDispatchCase,
+        FireDispatchCounty,
+        FireDispatchCountyInfo,
         NationwideFuelPrice,
         Invoice,
         Reservoir,
@@ -57,6 +63,7 @@ use crate::models::{
     )),
     tags(
         (name = "finance", description = "Exchange rates from Google Finance; `rate` is the amount of `quote` (TWD) for one unit of `base`"),
+        (name = "fire-dispatch", description = "Live cases from 18 county fire departments' public case lists, grouped by county"),
         (name = "fuel-prices", description = "Weekly Taiwan fuel and international crude oil prices"),
         (name = "invoices", description = "Taiwan uniform invoice winning numbers"),
         (name = "reservoirs", description = "Taiwan reservoir water level records"),
