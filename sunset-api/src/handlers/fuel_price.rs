@@ -39,6 +39,7 @@ impl FuelPriceListParams {
     }
 }
 
+/// Fuel price history
 #[utoipa::path(
     get,
     path = "/fuel-prices",
@@ -101,6 +102,7 @@ pub async fn list_fuel_prices(
     Ok(Json(rows))
 }
 
+/// Latest weekly fuel prices
 #[utoipa::path(
     get,
     path = "/fuel-prices/latest",
@@ -121,6 +123,7 @@ pub async fn latest_fuel_price(State(pool): State<PgPool>) -> ApiResult<Json<Nat
     Ok(Json(row))
 }
 
+/// Fuel price record by id
 #[utoipa::path(
     get,
     path = "/fuel-prices/{id}",

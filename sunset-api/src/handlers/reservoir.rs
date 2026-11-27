@@ -46,6 +46,7 @@ impl ReservoirListParams {
     }
 }
 
+/// Reservoir records
 #[utoipa::path(
     get,
     path = "/reservoirs",
@@ -133,6 +134,7 @@ pub async fn list_reservoirs(
     Ok(Json(rows))
 }
 
+/// Reservoir names
 #[utoipa::path(
     get,
     path = "/reservoirs/names",
@@ -150,6 +152,7 @@ pub async fn list_reservoir_names(State(pool): State<PgPool>) -> ApiResult<Json<
     Ok(Json(rows.into_iter().map(|(n,)| n).collect()))
 }
 
+/// Latest record of every reservoir
 #[utoipa::path(
     get,
     path = "/reservoirs/latest",
@@ -172,6 +175,7 @@ pub async fn latest_reservoirs(State(pool): State<PgPool>) -> ApiResult<Json<Vec
     Ok(Json(rows))
 }
 
+/// Reservoir record by id
 #[utoipa::path(
     get,
     path = "/reservoirs/{id}",

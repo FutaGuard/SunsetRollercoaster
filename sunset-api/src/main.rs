@@ -140,11 +140,17 @@ const SWAGGER_UI: &str = r##"<!doctype html>
     }
 
     .swagger-ui .info .title,
+    .swagger-ui .info h1,
+    .swagger-ui .info h2,
+    .swagger-ui .info h3,
+    .swagger-ui .info h4,
     .swagger-ui .info p,
     .swagger-ui .info li,
     .swagger-ui .info table,
     .swagger-ui .info a,
     .swagger-ui .opblock-tag,
+    .swagger-ui .opblock-tag small,
+    .swagger-ui .opblock-description-wrapper p,
     .swagger-ui .opblock .opblock-summary-description,
     .swagger-ui .opblock .opblock-summary-path,
     .swagger-ui .opblock .opblock-summary-path__deprecated,

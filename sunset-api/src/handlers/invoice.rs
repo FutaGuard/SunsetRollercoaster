@@ -36,6 +36,7 @@ impl InvoiceListParams {
     }
 }
 
+/// Invoice draw history
 #[utoipa::path(
     get,
     path = "/invoices",
@@ -93,6 +94,7 @@ pub async fn list_invoices(
     Ok(Json(rows))
 }
 
+/// Latest invoice draw
 #[utoipa::path(
     get,
     path = "/invoices/latest",
@@ -113,6 +115,7 @@ pub async fn latest_invoice(State(pool): State<PgPool>) -> ApiResult<Json<Invoic
     Ok(Json(row))
 }
 
+/// Invoice draw by id
 #[utoipa::path(
     get,
     path = "/invoices/{id}",

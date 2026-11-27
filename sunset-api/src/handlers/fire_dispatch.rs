@@ -67,6 +67,10 @@ impl FireDispatchRecordListParams {
     }
 }
 
+/// Stored case states
+///
+/// Every status or dispatched-unit change of a case is its own record. For incremental
+/// polling, pass the largest `last_seen_at` received as `since` and drop repeated `id`s.
 #[utoipa::path(
     get,
     path = "/fire-dispatch/records",
@@ -216,6 +220,10 @@ const CASE_GROUP_BY: &str = "GROUP BY county, case_id, \
     CASE WHEN case_id IS NULL THEN location END, \
     CASE WHEN case_id IS NULL THEN category END";
 
+/// Stored cases with status history
+///
+/// Records merged into cases. Poll with `since` and replace each returned case by its key
+/// (`county` + `case_id`, or `county` + `received_at` + `location` + `category`).
 #[utoipa::path(
     get,
     path = "/fire-dispatch/cases",
@@ -309,6 +317,7 @@ pub async fn list_cases(
     Ok(Json(cases))
 }
 
+/// Supported counties
 #[utoipa::path(
     get,
     path = "/fire-dispatch/counties",
@@ -321,6 +330,7 @@ pub async fn list_counties() -> Json<Vec<FireDispatchCountyInfo>> {
     Json(fire_dispatch::county_list())
 }
 
+/// Live cases of every county
 #[utoipa::path(
     get,
     path = "/fire-dispatch/latest",
@@ -335,6 +345,7 @@ pub async fn latest_all(
     Json(cache.all().await)
 }
 
+/// Live cases of one county
 #[utoipa::path(
     get,
     path = "/fire-dispatch/latest/{county}",

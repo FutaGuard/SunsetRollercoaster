@@ -14,7 +14,7 @@ use crate::models::{
     info(
         title = "Sunset Rollercoaster API",
         version = "0.1.0",
-        description = "Read-only REST API for Taipower electricity data, Taiwan and international fuel prices, exchange rates, live fire department dispatch cases, invoice draws, and reservoir records."
+        description = include_str!("../docs/overview.md")
     ),
     paths(
         handlers::finance::list_exchange_rates,
@@ -69,7 +69,7 @@ use crate::models::{
     )),
     tags(
         (name = "finance", description = "Exchange rates from Google Finance; `rate` is the amount of `quote` (TWD) for one unit of `base`"),
-        (name = "fire-dispatch", description = "Live cases from 18 county fire departments' public case lists, grouped by county, and their stored history"),
+        (name = "fire-dispatch", description = "Live cases from 18 county fire departments' public case lists, grouped by county, and their stored history; see the guide above"),
         (name = "fuel-prices", description = "Weekly Taiwan fuel and international crude oil prices"),
         (name = "invoices", description = "Taiwan uniform invoice winning numbers"),
         (name = "reservoirs", description = "Taiwan reservoir water level records"),

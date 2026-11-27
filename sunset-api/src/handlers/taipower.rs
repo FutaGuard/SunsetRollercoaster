@@ -73,6 +73,7 @@ fn append_time_filters(sql: &mut String, params: &TimeListParams, column: &str) 
     index
 }
 
+/// Load and peak forecast history
 #[utoipa::path(
     get,
     path = "/taipower/power-snapshots",
@@ -112,6 +113,7 @@ pub async fn list_power_snapshots(
     Ok(Json(rows))
 }
 
+/// Latest load and peak forecast
 #[utoipa::path(
     get,
     path = "/taipower/power-snapshots/latest",
@@ -134,6 +136,7 @@ pub async fn latest_power_snapshot(
     Ok(Json(row))
 }
 
+/// Fuel-mix curve history
 #[utoipa::path(
     get,
     path = "/taipower/fuel-mix",
@@ -173,6 +176,7 @@ pub async fn list_fuel_mix(
     Ok(Json(rows))
 }
 
+/// Latest fuel mix
 #[utoipa::path(
     get,
     path = "/taipower/fuel-mix/latest",
@@ -193,6 +197,7 @@ pub async fn latest_fuel_mix(State(pool): State<PgPool>) -> ApiResult<Json<Taipo
     Ok(Json(row))
 }
 
+/// Regional load curve history
 #[utoipa::path(
     get,
     path = "/taipower/area-loads",
@@ -232,6 +237,7 @@ pub async fn list_area_loads(
     Ok(Json(rows))
 }
 
+/// Latest regional load
 #[utoipa::path(
     get,
     path = "/taipower/area-loads/latest",
@@ -252,6 +258,7 @@ pub async fn latest_area_load(State(pool): State<PgPool>) -> ApiResult<Json<Taip
     Ok(Json(row))
 }
 
+/// Regional generation and load history
 #[utoipa::path(
     get,
     path = "/taipower/area-snapshots",
@@ -291,6 +298,7 @@ pub async fn list_area_snapshots(
     Ok(Json(rows))
 }
 
+/// Latest regional generation and load
 #[utoipa::path(
     get,
     path = "/taipower/area-snapshots/latest",
@@ -337,6 +345,7 @@ impl ReserveListParams {
     }
 }
 
+/// Operating reserve history
 #[utoipa::path(
     get,
     path = "/taipower/operating-reserves",
@@ -389,6 +398,7 @@ pub async fn list_operating_reserves(
     Ok(Json(rows))
 }
 
+/// Latest operating reserve
 #[utoipa::path(
     get,
     path = "/taipower/operating-reserves/latest",
@@ -442,6 +452,7 @@ impl GeneratorListParams {
     }
 }
 
+/// Generator output history
 #[utoipa::path(
     get,
     path = "/taipower/generators",
@@ -521,6 +532,7 @@ pub async fn list_generators(
     Ok(Json(rows))
 }
 
+/// Latest generator output
 #[utoipa::path(
     get,
     path = "/taipower/generators/latest",

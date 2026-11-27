@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Sunset Rollercoaster API",
-    "description": "Read-only REST API for Taipower electricity data, Taiwan and international fuel prices, exchange rates, live fire department dispatch cases, invoice draws, and reservoir records.",
+    "description": "Read-only REST API for Taipower electricity data, Taiwan and international fuel prices, exchange rates, live fire department dispatch cases, invoice draws, and reservoir records. Responses are JSON; errors are `{\"error\": \"...\"}`. Times are RFC 3339 in UTC, and `date`, `start`, `end` parameters are Asia/Taipei dates (`YYYY-MM-DD`).\n\n### Fire dispatch\n\n- `/fire-dispatch/latest`, `/fire-dispatch/latest/{county}`: read from the sources on demand, cached 60 seconds per county; only cases received in the last 6 hours.\n- `/fire-dispatch/records`: every stored state (a new record whenever a case's status or unit changes), kept 90 days.\n- `/fire-dispatch/cases`: records merged into cases with their status `history`.\n\nMost counties publish no case number, so cases are keyed by `county` + `case_id` where present (Tainan, New Taipei), otherwise by `county` + `received_at` + `location` + `category`.\n\n**Frontend example**: show a county's live cases, then keep a list of cases current by polling `/fire-dispatch/cases` with `since`. `since` is inclusive, so a case seen in the previous poll can come back; replacing it by its key makes that harmless. A `+` in an offset must be sent as `%2B`, which `URLSearchParams` does. Run it as `<script type=\"module\">` (top-level `await`) on a page with `<ul id=\"cases\"></ul>`.\n\n```js\nconst API = \"https://<api-host>\";\n\nasync function getJson(path, params = {}) {\n  const response = await fetch(`${API}${path}?${new URLSearchParams(params)}`);\n  if (!response.ok) throw new Error((await response.json()).error);\n  return response.json();\n}\n\n// Live list of one county (502 when its source is down).\nconst tainan = await getJson(\"/fire-dispatch/latest/tainan\");\nconsole.log(tainan.fetched_at, tainan.cases);\n\n// Cases of the last 24 hours, then only the ones that changed.\nconst cases = new Map();\nconst caseKey = (c) =>\n  c.case_id ? `${c.county}#${c.case_id}` : `${c.county}|${c.received_at}|${c.location}|${c.category}`;\nlet since = null;\n\nasync function poll() {\n  const params = { limit: 1000, ...(since && { since }) };\n  for (const c of await getJson(\"/fire-dispatch/cases\", params)) {\n    cases.set(caseKey(c), c);\n    if (!since || Date.parse(c.last_seen_at) > Date.parse(since)) since = c.last_seen_at;\n  }\n  render([...cases.values()].sort((a, b) => b.first_seen_at.localeCompare(a.first_seen_at)));\n}\n\nfunction render(list) {\n  document.querySelector(\"#cases\").replaceChildren(\n    ...list.map((c) => {\n      const row = document.createElement(\"li\");\n      row.textContent = `${c.county} ${c.category} ${c.location} ${c.status ?? \"\"} (${c.history.length} states)`;\n      return row;\n    }),\n  );\n}\n\npoll();\nsetInterval(poll, 30_000); // the crawler stores new states every 30 seconds\n```\n",
     "license": {
       "name": ""
     },
@@ -14,6 +14,7 @@
         "tags": [
           "finance"
         ],
+        "summary": "Exchange rate history",
         "operationId": "list_exchange_rates",
         "parameters": [
           {
@@ -111,6 +112,7 @@
         "tags": [
           "finance"
         ],
+        "summary": "Real-time exchange rates",
         "operationId": "latest_exchange_rates",
         "responses": {
           "200": {
@@ -154,6 +156,8 @@
         "tags": [
           "fire-dispatch"
         ],
+        "summary": "Stored cases with status history",
+        "description": "Records merged into cases. Poll with `since` and replace each returned case by its key\n(`county` + `case_id`, or `county` + `received_at` + `location` + `category`).",
         "operationId": "list_cases",
         "parameters": [
           {
@@ -261,6 +265,7 @@
         "tags": [
           "fire-dispatch"
         ],
+        "summary": "Supported counties",
         "operationId": "list_counties",
         "responses": {
           "200": {
@@ -284,6 +289,7 @@
         "tags": [
           "fire-dispatch"
         ],
+        "summary": "Live cases of every county",
         "operationId": "latest_all",
         "responses": {
           "200": {
@@ -307,6 +313,7 @@
         "tags": [
           "fire-dispatch"
         ],
+        "summary": "Live cases of one county",
         "operationId": "latest_county",
         "parameters": [
           {
@@ -358,6 +365,8 @@
         "tags": [
           "fire-dispatch"
         ],
+        "summary": "Stored case states",
+        "description": "Every status or dispatched-unit change of a case is its own record. For incremental\npolling, pass the largest `last_seen_at` received as `since` and drop repeated `id`s.",
         "operationId": "list_records",
         "parameters": [
           {
@@ -465,6 +474,7 @@
         "tags": [
           "fuel-prices"
         ],
+        "summary": "Fuel price history",
         "operationId": "list_fuel_prices",
         "parameters": [
           {
@@ -543,6 +553,7 @@
         "tags": [
           "fuel-prices"
         ],
+        "summary": "Latest weekly fuel prices",
         "operationId": "latest_fuel_price",
         "responses": {
           "200": {
@@ -573,6 +584,7 @@
         "tags": [
           "fuel-prices"
         ],
+        "summary": "Fuel price record by id",
         "operationId": "get_fuel_price",
         "parameters": [
           {
@@ -615,6 +627,7 @@
         "tags": [
           "invoices"
         ],
+        "summary": "Invoice draw history",
         "operationId": "list_invoices",
         "parameters": [
           {
@@ -693,6 +706,7 @@
         "tags": [
           "invoices"
         ],
+        "summary": "Latest invoice draw",
         "operationId": "latest_invoice",
         "responses": {
           "200": {
@@ -723,6 +737,7 @@
         "tags": [
           "invoices"
         ],
+        "summary": "Invoice draw by id",
         "operationId": "get_invoice",
         "parameters": [
           {
@@ -765,6 +780,7 @@
         "tags": [
           "reservoirs"
         ],
+        "summary": "Reservoir records",
         "operationId": "list_reservoirs",
         "parameters": [
           {
@@ -874,6 +890,7 @@
         "tags": [
           "reservoirs"
         ],
+        "summary": "Latest record of every reservoir",
         "operationId": "latest_reservoirs",
         "responses": {
           "200": {
@@ -897,6 +914,7 @@
         "tags": [
           "reservoirs"
         ],
+        "summary": "Reservoir names",
         "operationId": "list_reservoir_names",
         "responses": {
           "200": {
@@ -920,6 +938,7 @@
         "tags": [
           "reservoirs"
         ],
+        "summary": "Reservoir record by id",
         "operationId": "get_reservoir",
         "parameters": [
           {
@@ -962,6 +981,7 @@
         "tags": [
           "taipower"
         ],
+        "summary": "Regional load curve history",
         "operationId": "list_area_loads",
         "parameters": [
           {
@@ -1040,6 +1060,7 @@
         "tags": [
           "taipower"
         ],
+        "summary": "Latest regional load",
         "operationId": "latest_area_load",
         "responses": {
           "200": {
@@ -1070,6 +1091,7 @@
         "tags": [
           "taipower"
         ],
+        "summary": "Regional generation and load history",
         "operationId": "list_area_snapshots",
         "parameters": [
           {
@@ -1148,6 +1170,7 @@
         "tags": [
           "taipower"
         ],
+        "summary": "Latest regional generation and load",
         "operationId": "latest_area_snapshot",
         "responses": {
           "200": {
@@ -1178,6 +1201,7 @@
         "tags": [
           "taipower"
         ],
+        "summary": "Fuel-mix curve history",
         "operationId": "list_fuel_mix",
         "parameters": [
           {
@@ -1256,6 +1280,7 @@
         "tags": [
           "taipower"
         ],
+        "summary": "Latest fuel mix",
         "operationId": "latest_fuel_mix",
         "responses": {
           "200": {
@@ -1286,6 +1311,7 @@
         "tags": [
           "taipower"
         ],
+        "summary": "Generator output history",
         "operationId": "list_generators",
         "parameters": [
           {
@@ -1391,6 +1417,7 @@
         "tags": [
           "taipower"
         ],
+        "summary": "Latest generator output",
         "operationId": "latest_generators",
         "responses": {
           "200": {
@@ -1414,6 +1441,7 @@
         "tags": [
           "taipower"
         ],
+        "summary": "Operating reserve history",
         "operationId": "list_operating_reserves",
         "parameters": [
           {
@@ -1491,6 +1519,7 @@
         "tags": [
           "taipower"
         ],
+        "summary": "Latest operating reserve",
         "operationId": "latest_operating_reserve",
         "responses": {
           "200": {
@@ -1521,6 +1550,7 @@
         "tags": [
           "taipower"
         ],
+        "summary": "Load and peak forecast history",
         "operationId": "list_power_snapshots",
         "parameters": [
           {
@@ -1599,6 +1629,7 @@
         "tags": [
           "taipower"
         ],
+        "summary": "Latest load and peak forecast",
         "operationId": "latest_power_snapshot",
         "responses": {
           "200": {
@@ -1684,11 +1715,13 @@
               "string",
               "null"
             ],
-            "description": "Source case number, when published (Tainan, New Taipei)."
+            "description": "Source case number, when published (Tainan, New Taipei).",
+            "example": "215320"
           },
           "category": {
             "type": "string",
-            "description": "Case category, joined as `案類-案別` when the source splits them (for example, `緊急救護-車禍`)."
+            "description": "Case category, joined as `案類-案別` when the source splits them.",
+            "example": "緊急救護-車禍"
           },
           "latitude": {
             "type": [
@@ -1696,11 +1729,13 @@
               "null"
             ],
             "format": "double",
-            "description": "WGS84 latitude, when published (New Taipei)."
+            "description": "WGS84 latitude, when published (New Taipei).",
+            "example": null
           },
           "location": {
             "type": "string",
-            "description": "Incident location as published; ambulance cases are often truncated to the district."
+            "description": "Incident location as published; ambulance cases are often truncated to the district.",
+            "example": "台南市永康區"
           },
           "longitude": {
             "type": [
@@ -1708,7 +1743,8 @@
               "null"
             ],
             "format": "double",
-            "description": "WGS84 longitude, when published (New Taipei)."
+            "description": "WGS84 longitude, when published (New Taipei).",
+            "example": null
           },
           "received_at": {
             "type": [
@@ -1716,21 +1752,24 @@
               "null"
             ],
             "format": "date-time",
-            "description": "When the dispatch center received the case; null when the source omits it (New Taipei)."
+            "description": "When the dispatch center received the case; null when the source omits it (New Taipei).",
+            "example": "2026-11-27T13:53:20Z"
           },
           "status": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Current status (執行狀況), for example `已出動`, when published."
+            "description": "Current status (執行狀況), when published.",
+            "example": "已出動"
           },
           "unit": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Dispatched station or vehicles (派遣分隊), when published."
+            "description": "Dispatched station or vehicles (派遣分隊), when published.",
+            "example": "鹽行分隊"
           }
         }
       },
@@ -1745,28 +1784,37 @@
         "properties": {
           "first_seen_at": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "When the crawler first saw this state.",
+            "example": "2026-11-27T13:54:37.205116Z"
           },
           "id": {
             "type": "integer",
             "format": "int32",
-            "description": "Record id in `/fire-dispatch/records`."
+            "description": "Record id in `/fire-dispatch/records`.",
+            "example": 19297
           },
           "last_seen_at": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "When the crawler last saw this state.",
+            "example": "2026-11-27T13:58:07.512094Z"
           },
           "status": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Status in this state.",
+            "example": "已出動"
           },
           "unit": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Dispatched station or vehicles in this state.",
+            "example": "鹽行分隊"
           }
         }
       },
@@ -1788,14 +1836,17 @@
             "description": "Cases received in the last 6 hours, newest first; cases without `received_at` last."
           },
           "code": {
-            "type": "string"
+            "type": "string",
+            "description": "County code.",
+            "example": "tainan"
           },
           "error": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Why the source could not be read (only in `/fire-dispatch/latest`); `cases` is then empty."
+            "description": "Why the source could not be read (only in `/fire-dispatch/latest`); `cases` is then empty.",
+            "example": null
           },
           "fetched_at": {
             "type": [
@@ -1803,13 +1854,18 @@
               "null"
             ],
             "format": "date-time",
-            "description": "When the source was read; null when the request failed."
+            "description": "When the source was read; null when the request failed.",
+            "example": "2026-11-27T13:54:37Z"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "County name.",
+            "example": "臺南市"
           },
           "source_url": {
-            "type": "string"
+            "type": "string",
+            "description": "Fire department case list the cases are read from.",
+            "example": "https://119dts.tncfd.gov.tw/DTS/caselist/html"
           }
         }
       },
@@ -1823,15 +1879,18 @@
         "properties": {
           "code": {
             "type": "string",
-            "description": "County code used in `/fire-dispatch/latest/{county}` (for example, `tainan`)."
+            "description": "County code used by the other fire dispatch endpoints.",
+            "example": "tainan"
           },
           "name": {
             "type": "string",
-            "description": "County name (for example, `臺南市`)."
+            "description": "County name.",
+            "example": "臺南市"
           },
           "source_url": {
             "type": "string",
-            "description": "Fire department case list the cases are read from."
+            "description": "Fire department case list the cases are read from.",
+            "example": "https://119dts.tncfd.gov.tw/DTS/caselist/html"
           }
         }
       },
@@ -1851,64 +1910,85 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Source case number (Tainan, New Taipei).",
+            "example": "215320"
           },
           "category": {
-            "type": "string"
+            "type": "string",
+            "description": "Case category (`案類-案別`).",
+            "example": "緊急救護"
           },
           "county": {
             "type": "string",
-            "description": "County code (for example, `tainan`)."
+            "description": "County code.",
+            "example": "tainan"
           },
           "first_seen_at": {
             "type": "string",
             "format": "date-time",
-            "description": "When the crawler first saw this state."
+            "description": "When the crawler first saw this state.",
+            "example": "2026-11-27T13:54:37.205116Z"
           },
           "id": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "Record id; stable, use it to drop repeats when polling with `since`.",
+            "example": 19297
           },
           "last_seen_at": {
             "type": "string",
             "format": "date-time",
-            "description": "When the crawler last saw this state in the live list."
+            "description": "When the crawler last saw this state in the live list.",
+            "example": "2026-11-27T13:58:07.512094Z"
           },
           "latitude": {
             "type": [
               "number",
               "null"
             ],
-            "format": "double"
+            "format": "double",
+            "description": "WGS84 latitude (New Taipei).",
+            "example": null
           },
           "location": {
-            "type": "string"
+            "type": "string",
+            "description": "Incident location as published.",
+            "example": "台南市永康區"
           },
           "longitude": {
             "type": [
               "number",
               "null"
             ],
-            "format": "double"
+            "format": "double",
+            "description": "WGS84 longitude (New Taipei).",
+            "example": null
           },
           "received_at": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date-time"
+            "format": "date-time",
+            "description": "When the dispatch center received the case; null for New Taipei.",
+            "example": "2026-11-27T13:53:20Z"
           },
           "status": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Status in this state.",
+            "example": "已出動"
           },
           "unit": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Dispatched station or vehicles in this state.",
+            "example": "鹽行分隊"
           }
         }
       },
@@ -1928,18 +2008,25 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Source case number (Tainan, New Taipei); the case key with `county` when present.",
+            "example": "215320"
           },
           "category": {
-            "type": "string"
+            "type": "string",
+            "description": "Case category (`案類-案別`).",
+            "example": "緊急救護"
           },
           "county": {
-            "type": "string"
+            "type": "string",
+            "description": "County code.",
+            "example": "tainan"
           },
           "first_seen_at": {
             "type": "string",
             "format": "date-time",
-            "description": "When the crawler first saw any state of the case."
+            "description": "When the crawler first saw any state of the case.",
+            "example": "2026-11-27T13:54:37.205116Z"
           },
           "history": {
             "type": "array",
@@ -1951,45 +2038,56 @@
           "last_seen_at": {
             "type": "string",
             "format": "date-time",
-            "description": "When the crawler last saw any state of the case."
+            "description": "When the crawler last saw any state of the case.",
+            "example": "2026-11-27T14:02:38.004417Z"
           },
           "latitude": {
             "type": [
               "number",
               "null"
             ],
-            "format": "double"
+            "format": "double",
+            "description": "Latest-seen WGS84 latitude (New Taipei).",
+            "example": null
           },
           "location": {
-            "type": "string"
+            "type": "string",
+            "description": "Incident location as published.",
+            "example": "台南市永康區"
           },
           "longitude": {
             "type": [
               "number",
               "null"
             ],
-            "format": "double"
+            "format": "double",
+            "description": "Latest-seen WGS84 longitude (New Taipei).",
+            "example": null
           },
           "received_at": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date-time"
+            "format": "date-time",
+            "description": "When the dispatch center received the case; null for New Taipei.",
+            "example": "2026-11-27T13:53:20Z"
           },
           "status": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Latest-seen status."
+            "description": "Latest-seen status.",
+            "example": "已到達"
           },
           "unit": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Latest-seen dispatched station or vehicles."
+            "description": "Latest-seen dispatched station or vehicles.",
+            "example": "鹽行分隊"
           }
         }
       },
@@ -2674,7 +2772,7 @@
     },
     {
       "name": "fire-dispatch",
-      "description": "Live cases from 18 county fire departments' public case lists, grouped by county, and their stored history"
+      "description": "Live cases from 18 county fire departments' public case lists, grouped by county, and their stored history; see the guide above"
     },
     {
       "name": "fuel-prices",

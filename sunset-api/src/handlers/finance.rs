@@ -56,6 +56,7 @@ impl ExchangeRateListParams {
     }
 }
 
+/// Exchange rate history
 #[utoipa::path(
     get,
     path = "/finance/exchange-rates",
@@ -123,6 +124,7 @@ pub async fn list_exchange_rates(
     Ok(Json(rows))
 }
 
+/// Real-time exchange rates
 #[utoipa::path(
     get,
     path = "/finance/exchange-rates/latest",
