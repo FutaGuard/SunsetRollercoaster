@@ -73,7 +73,7 @@ sunset-api 直接讀取 18 個縣市消防局公開的即時案件列表（不�
 
 ### 歷史紀錄
 
-Python crawler 每分鐘讀一次 sunset-api 的 `/fire-dispatch/latest`（位址設定於
+Python crawler 每 30 秒讀一次 sunset-api 的 `/fire-dispatch/latest`（位址設定於
 `env_config.yml` 的 `sunset_api.url`，compose 網路內為 `http://sunset-api:<server.port>`），
 寫入 `fire_dispatch_record` 資料表。解析、代理都沿用 sunset-api，crawler 不重複實作。
 

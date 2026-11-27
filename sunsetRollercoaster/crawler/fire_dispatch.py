@@ -27,10 +27,11 @@ class FireDispatchRecordCrawler(Crawler):
 
     各縣市頁面的解析、代理與快取都在 sunset-api，這裡不重複實作；
     sunset-api 位址設定於 env_config.yml 的 `sunset_api.url`。
-    即時列表只保留 6 小時內的案件，每分鐘同步一次以留下每次狀態變化。
+    即時列表只保留 6 小時內的案件，需持續同步才留得下每次狀態變化。
+    sunset-api 每縣市快取 60 秒；以一半的間隔讀取，才不會因週期對齊而連續拿到同一份快取。
     """
 
-    INTERVAL = timedelta(minutes=1)
+    INTERVAL = timedelta(seconds=30)
 
     def __init__(self, proxy: Crawler.Proxy = Crawler.Proxy.NO):
         super().__init__(proxy)
