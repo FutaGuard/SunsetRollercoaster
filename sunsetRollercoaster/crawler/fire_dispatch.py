@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from loguru import logger
-from sqlalchemy import literal_column
+from sqlalchemy import delete, literal_column
 from sqlalchemy.dialects.postgresql import insert
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -29,9 +29,11 @@ class FireDispatchRecordCrawler(Crawler):
     sunset-api 位址設定於 env_config.yml 的 `sunset_api.url`。
     即時列表只保留 6 小時內的案件，需持續同步才留得下每次狀態變化。
     sunset-api 每縣市快取 60 秒；以一半的間隔讀取，才不會因週期對齊而連續拿到同一份快取。
+    紀錄保留 RETENTION，每次同步順便刪除更舊的紀錄。
     """
 
     INTERVAL = timedelta(seconds=30)
+    RETENTION = timedelta(days=90)
 
     def __init__(self, proxy: Crawler.Proxy = Crawler.Proxy.NO):
         super().__init__(proxy)
@@ -60,8 +62,19 @@ class FireDispatchRecordCrawler(Crawler):
 
     async def sync(self, session: AsyncSession) -> int:
         records = await self.fetch()
-        if not records:
-            return 0
+        added = await self._upsert(session, records) if records else 0
+        # 依 first_seen_at 判斷才用得到索引；一個狀態只會在即時列表停留數小時，與 last_seen_at 相差不大。
+        cutoff = datetime.now(timezone.utc) - self.RETENTION
+        result = await session.exec(
+            delete(FireDispatchRecord).where(FireDispatchRecord.first_seen_at < cutoff)
+        )
+        await session.commit()
+        if result.rowcount:
+            logger.info(f"刪除 {result.rowcount} 筆超過 {self.RETENTION.days} 天的消防案件紀錄")
+        return added
+
+    @staticmethod
+    async def _upsert(session: AsyncSession, records: list[FireDispatchRecord]) -> int:
         rows = [record.model_dump(exclude={"id"}) for record in records]
         statement = insert(FireDispatchRecord).values(rows)
         statement = statement.on_conflict_do_update(
@@ -74,9 +87,7 @@ class FireDispatchRecordCrawler(Crawler):
             # PostgreSQL 的 xmax 在新插入的列為 0，被更新的既有列則不是。
         ).returning(literal_column("xmax = 0"))
         result = await session.exec(statement)
-        added = sum(1 for (inserted,) in result.all() if inserted)
-        await session.commit()
-        return added
+        return sum(1 for (inserted,) in result.all() if inserted)
 
     @classmethod
     def _parse(cls, payload: list[Any]) -> list[FireDispatchRecord]:

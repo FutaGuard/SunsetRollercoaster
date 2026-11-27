@@ -78,7 +78,8 @@ Python crawler 每 30 秒讀一次 sunset-api 的 `/fire-dispatch/latest`（位�
 寫入 `fire_dispatch_record` 資料表。解析、代理都沿用 sunset-api，crawler 不重複實作。
 
 多數縣市不公開案件編號，因此不推斷「同一案件」：同一案件每換一次狀態或派遣分隊就新增一筆，
-狀態沒變只更新 `last_seen_at`，`first_seen_at` 為第一次看到該狀態的時間。紀錄不會自動刪除。
+狀態沒變只更新 `last_seen_at`，`first_seen_at` 為第一次看到該狀態的時間。紀錄保留 90 天：
+crawler 每次同步時刪除 `first_seen_at` 超過 90 天的紀錄。
 
 - `/fire-dispatch/records`：依 `county`、`date`、`start`、`end`（以台北日期篩選 `first_seen_at`）
   查詢，`first_seen_at` 由新到舊，支援 `limit`、`offset`。
