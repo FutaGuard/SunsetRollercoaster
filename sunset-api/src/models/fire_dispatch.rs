@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use utoipa::ToSchema;
 
@@ -66,4 +66,38 @@ pub struct FireDispatchRecord {
     pub first_seen_at: DateTime<Utc>,
     /// When the crawler last saw this state in the live list.
     pub last_seen_at: DateTime<Utc>,
+}
+
+/// One stored state within a case's history.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct FireDispatchCaseState {
+    /// Record id in `/fire-dispatch/records`.
+    pub id: i32,
+    pub status: Option<String>,
+    pub unit: Option<String>,
+    pub first_seen_at: DateTime<Utc>,
+    pub last_seen_at: DateTime<Utc>,
+}
+
+/// Stored records merged into one case; current fields come from the latest-seen state.
+#[derive(Debug, Clone, Serialize, FromRow, ToSchema)]
+pub struct FireDispatchStoredCase {
+    pub county: String,
+    pub received_at: Option<DateTime<Utc>>,
+    pub category: String,
+    pub location: String,
+    pub case_id: Option<String>,
+    /// Latest-seen status.
+    pub status: Option<String>,
+    /// Latest-seen dispatched station or vehicles.
+    pub unit: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    /// When the crawler first saw any state of the case.
+    pub first_seen_at: DateTime<Utc>,
+    /// When the crawler last saw any state of the case.
+    pub last_seen_at: DateTime<Utc>,
+    /// Every state of the case, in the order first seen.
+    #[sqlx(json)]
+    pub history: Vec<FireDispatchCaseState>,
 }

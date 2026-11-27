@@ -1,7 +1,7 @@
 use axum::{extract::Query, http::Uri};
 use sunset_api::handlers::{
     finance::ExchangeRateListParams,
-    fire_dispatch::FireDispatchRecordListParams,
+    fire_dispatch::{FireDispatchCaseListParams, FireDispatchRecordListParams},
     fuel_price::FuelPriceListParams,
     invoice::InvoiceListParams,
     reservoir::ReservoirListParams,
@@ -94,13 +94,28 @@ fn existing_date_range_endpoints_keep_accepting_date_only_ranges() {
 }
 
 #[test]
-fn fire_dispatch_records_accept_date_only_ranges() {
-    let Query(params) =
+fn fire_dispatch_history_accepts_date_only_ranges_and_rfc3339_since() {
+    let Query(records) =
         Query::<FireDispatchRecordListParams>::try_from_uri(&uri("/fire-dispatch/records"))
             .expect("date-only start and end should be valid");
+    let Query(cases) =
+        Query::<FireDispatchCaseListParams>::try_from_uri(&uri("/fire-dispatch/cases"))
+            .expect("date-only start and end should be valid");
+    let Query(since) = Query::<FireDispatchRecordListParams>::try_from_uri(
+        &"/fire-dispatch/records?since=2026-11-27T20:00:00%2B08:00"
+            .parse()
+            .unwrap(),
+    )
+    .expect("RFC 3339 since with an offset should be valid");
 
-    assert_eq!(text(params.start.as_ref()), Some("2026-08-14".to_string()));
-    assert_eq!(text(params.end.as_ref()), Some("2026-08-21".to_string()));
+    for (start, end) in [(&records.start, &records.end), (&cases.start, &cases.end)] {
+        assert_eq!(text(start.as_ref()), Some("2026-08-14".to_string()));
+        assert_eq!(text(end.as_ref()), Some("2026-08-21".to_string()));
+    }
+    assert_eq!(
+        since.since.map(|t| t.to_rfc3339()),
+        Some("2026-11-27T12:00:00+00:00".to_string())
+    );
 }
 
 #[test]
@@ -129,7 +144,7 @@ fn openapi_describes_every_date_range_as_date_only() {
 
     assert_eq!(
         checked.len(),
-        22,
-        "expected start/end on eleven list endpoints"
+        24,
+        "expected start/end on twelve list endpoints"
     );
 }

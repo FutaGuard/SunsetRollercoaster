@@ -45,5 +45,5 @@ class FireDispatchRecord(SQLModel, table=True):
         sa_column=Column(DateTime(timezone=True), nullable=False, index=True)
     )
     last_seen_at: datetime = Field(
-        sa_column=Column(DateTime(timezone=True), nullable=False)
+        sa_column=Column(DateTime(timezone=True), nullable=False, index=True)
     )

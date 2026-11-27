@@ -7,7 +7,8 @@ pub mod taipower;
 
 pub use finance::{FinanceExchangeRate, LiveExchangeRate};
 pub use fire_dispatch::{
-    FireDispatchCase, FireDispatchCounty, FireDispatchCountyInfo, FireDispatchRecord,
+    FireDispatchCase, FireDispatchCaseState, FireDispatchCounty, FireDispatchCountyInfo,
+    FireDispatchRecord, FireDispatchStoredCase,
 };
 pub use fuel_price::NationwideFuelPrice;
 pub use invoice::Invoice;

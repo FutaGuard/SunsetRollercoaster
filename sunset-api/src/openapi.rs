@@ -3,10 +3,10 @@ use utoipa::OpenApi;
 use crate::error::ErrorBody;
 use crate::handlers;
 use crate::models::{
-    FinanceExchangeRate, FireDispatchCase, FireDispatchCounty, FireDispatchCountyInfo,
-    FireDispatchRecord, Invoice, LiveExchangeRate, NationwideFuelPrice, Reservoir,
-    TaipowerAreaLoad, TaipowerAreaSnapshot, TaipowerFuelMix, TaipowerGenerator,
-    TaipowerOperatingReserve, TaipowerPowerSnapshot,
+    FinanceExchangeRate, FireDispatchCase, FireDispatchCaseState, FireDispatchCounty,
+    FireDispatchCountyInfo, FireDispatchRecord, FireDispatchStoredCase, Invoice, LiveExchangeRate,
+    NationwideFuelPrice, Reservoir, TaipowerAreaLoad, TaipowerAreaSnapshot, TaipowerFuelMix,
+    TaipowerGenerator, TaipowerOperatingReserve, TaipowerPowerSnapshot,
 };
 
 #[derive(OpenApi)]
@@ -23,6 +23,7 @@ use crate::models::{
         handlers::fire_dispatch::latest_all,
         handlers::fire_dispatch::latest_county,
         handlers::fire_dispatch::list_records,
+        handlers::fire_dispatch::list_cases,
         handlers::fuel_price::list_fuel_prices,
         handlers::fuel_price::latest_fuel_price,
         handlers::fuel_price::get_fuel_price,
@@ -53,6 +54,8 @@ use crate::models::{
         FireDispatchCounty,
         FireDispatchCountyInfo,
         FireDispatchRecord,
+        FireDispatchStoredCase,
+        FireDispatchCaseState,
         NationwideFuelPrice,
         Invoice,
         Reservoir,

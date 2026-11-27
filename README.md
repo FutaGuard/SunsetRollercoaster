@@ -83,6 +83,14 @@ crawler 每次同步時刪除 `first_seen_at` 超過 90 天的紀錄。
 
 - `/fire-dispatch/records`：依 `county`、`date`、`start`、`end`（以台北日期篩選 `first_seen_at`）
   查詢，`first_seen_at` 由新到舊，支援 `limit`、`offset`。
+- `since`（RFC 3339，例如 `2026-11-27T12:00:00Z`）：`records` 與 `cases` 都可用，只回傳
+  `last_seen_at >= since` 的紀錄或案件，改為由舊到新。含等於 `since` 的資料，增量輪詢時
+  傳入已收到的最大 `last_seen_at`，紀錄再用 `id` 去重、案件則以新回傳的整筆取代舊的；
+  時區偏移的 `+` 需寫成 `%2B`。
+- `/fire-dispatch/cases`：把紀錄合併成案件。有案件編號的縣市（台南、新北）依編號，
+  其餘依「縣市＋受理時間＋地點＋類別」視為同一件（同時派遣多個分隊會併成一件）。
+  目前欄位取最後看到的狀態，`history` 依序列出每個狀態；可用 `county`、`date`、`start`、
+  `end`（篩案件的 `first_seen_at`）與 `since`。都沒給時只列 24 小時內出現的案件。
 
 南投消防局憑證鏈到 TWCA CYBER Root CA，不在內建根憑證中；
 `sunset-api/certs/twca-cyber-root-ca.pem` 只加入這個 API 的抓取用連線，

@@ -149,6 +149,113 @@
         }
       }
     },
+    "/fire-dispatch/cases": {
+      "get": {
+        "tags": [
+          "fire-dispatch"
+        ],
+        "operationId": "list_cases",
+        "parameters": [
+          {
+            "name": "county",
+            "in": "query",
+            "description": "County code from `/fire-dispatch/counties` (for example, `tainan`).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Exact local date of the case's `first_seen_at` in Asia/Taipei (YYYY-MM-DD).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Inclusive local date lower bound on the case's `first_seen_at` in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "Inclusive local date upper bound on the case's `first_seen_at` in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "description": "RFC 3339 time: only cases with a state added or updated at or after it\n(`last_seen_at >= since`), oldest `last_seen_at` first. Without `date`, `start`, `end`,\nor `since`, only cases first seen in the last 24 hours are listed.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 100,
+              "maximum": 1000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stored records merged into cases, newest first_seen_at first (oldest last_seen_at first with `since`). Most counties publish no case number, so records sharing county, receive time, location, and category count as one case (simultaneous dispatches of several stations included); Tainan and New Taipei use their case numbers.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FireDispatchStoredCase"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown county code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/fire-dispatch/counties": {
       "get": {
         "tags": [
@@ -293,6 +400,16 @@
             }
           },
           {
+            "name": "since",
+            "in": "query",
+            "description": "RFC 3339 time (for example, `2026-11-27T12:00:00Z`): only records added or updated at\nor after it (`last_seen_at >= since`), oldest `last_seen_at` first. Inclusive, so pass the\nlargest `last_seen_at` already received and drop repeats by `id`.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -318,7 +435,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Stored case states, newest first_seen_at first. The crawler stores `/fire-dispatch/latest` every minute; each status or unit change of a case is a separate record.",
+            "description": "Stored case states, newest first_seen_at first (oldest last_seen_at first with `since`). The crawler stores `/fire-dispatch/latest` every 30 seconds; each status or unit change of a case is a separate record.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1617,6 +1734,42 @@
           }
         }
       },
+      "FireDispatchCaseState": {
+        "type": "object",
+        "description": "One stored state within a case's history.",
+        "required": [
+          "id",
+          "first_seen_at",
+          "last_seen_at"
+        ],
+        "properties": {
+          "first_seen_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Record id in `/fire-dispatch/records`."
+          },
+          "last_seen_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "FireDispatchCounty": {
         "type": "object",
         "description": "Live cases of one county, fetched on demand and cached for 60 seconds.",
@@ -1756,6 +1909,87 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "FireDispatchStoredCase": {
+        "type": "object",
+        "description": "Stored records merged into one case; current fields come from the latest-seen state.",
+        "required": [
+          "county",
+          "category",
+          "location",
+          "first_seen_at",
+          "last_seen_at",
+          "history"
+        ],
+        "properties": {
+          "case_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "category": {
+            "type": "string"
+          },
+          "county": {
+            "type": "string"
+          },
+          "first_seen_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the crawler first saw any state of the case."
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FireDispatchCaseState"
+            },
+            "description": "Every state of the case, in the order first seen."
+          },
+          "last_seen_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the crawler last saw any state of the case."
+          },
+          "latitude": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "location": {
+            "type": "string"
+          },
+          "longitude": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "received_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Latest-seen status."
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Latest-seen dispatched station or vehicles."
           }
         }
       },
