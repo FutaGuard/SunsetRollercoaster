@@ -1,6 +1,7 @@
 use axum::{extract::Query, http::Uri};
 use sunset_api::handlers::{
     finance::ExchangeRateListParams,
+    fire_dispatch::FireDispatchRecordListParams,
     fuel_price::FuelPriceListParams,
     invoice::InvoiceListParams,
     reservoir::ReservoirListParams,
@@ -93,6 +94,16 @@ fn existing_date_range_endpoints_keep_accepting_date_only_ranges() {
 }
 
 #[test]
+fn fire_dispatch_records_accept_date_only_ranges() {
+    let Query(params) =
+        Query::<FireDispatchRecordListParams>::try_from_uri(&uri("/fire-dispatch/records"))
+            .expect("date-only start and end should be valid");
+
+    assert_eq!(text(params.start.as_ref()), Some("2026-08-14".to_string()));
+    assert_eq!(text(params.end.as_ref()), Some("2026-08-21".to_string()));
+}
+
+#[test]
 fn openapi_describes_every_date_range_as_date_only() {
     let document = serde_json::to_value(ApiDoc::openapi()).unwrap();
     let paths = document["paths"].as_object().unwrap();
@@ -118,7 +129,7 @@ fn openapi_describes_every_date_range_as_date_only() {
 
     assert_eq!(
         checked.len(),
-        20,
-        "expected start/end on ten list endpoints"
+        22,
+        "expected start/end on eleven list endpoints"
     );
 }

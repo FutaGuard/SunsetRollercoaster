@@ -71,6 +71,18 @@ sunset-api 直接讀取 18 個縣市消防局公開的即時案件列表（不�
 （列表常殘留舊案或範例資料）；新北來源沒有受理時間，`received_at` 為 `null`，
 但有車輛與座標。每個縣市的結果快取 60 秒，同時進來的請求共用一次抓取。
 
+### 歷史紀錄
+
+Python crawler 每分鐘讀一次 sunset-api 的 `/fire-dispatch/latest`（位址設定於
+`env_config.yml` 的 `sunset_api.url`，compose 網路內為 `http://sunset-api:<server.port>`），
+寫入 `fire_dispatch_record` 資料表。解析、代理都沿用 sunset-api，crawler 不重複實作。
+
+多數縣市不公開案件編號，因此不推斷「同一案件」：同一案件每換一次狀態或派遣分隊就新增一筆，
+狀態沒變只更新 `last_seen_at`，`first_seen_at` 為第一次看到該狀態的時間。紀錄不會自動刪除。
+
+- `/fire-dispatch/records`：依 `county`、`date`、`start`、`end`（以台北日期篩選 `first_seen_at`）
+  查詢，`first_seen_at` 由新到舊，支援 `limit`、`offset`。
+
 南投消防局憑證鏈到 TWCA CYBER Root CA，不在內建根憑證中；
 `sunset-api/certs/twca-cyber-root-ca.pem` 只加入這個 API 的抓取用連線，
 SHA-256 指紋與 TWCA 2025 年 WebTrust 稽核報告列出的一致。

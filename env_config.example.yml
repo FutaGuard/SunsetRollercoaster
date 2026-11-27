@@ -19,6 +19,12 @@ fire_dispatch:
   proxy_basic_auth: user:password
   proxy_counties: [kaohsiung, hsinchu-city, chiayi-city]
 
+# sunset-api as reached by the Python crawler, which stores /fire-dispatch/latest
+# into fire_dispatch_record every minute. In docker-compose: the service name and
+# the server.port below.
+sunset_api:
+  url: http://sunset-api:8080
+
 # Optional. Consumed only by sunset-api (Rust). Defaults: 0.0.0.0:8080.
 server:
   host: 0.0.0.0

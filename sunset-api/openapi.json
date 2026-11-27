@@ -246,6 +246,103 @@
         }
       }
     },
+    "/fire-dispatch/records": {
+      "get": {
+        "tags": [
+          "fire-dispatch"
+        ],
+        "operationId": "list_records",
+        "parameters": [
+          {
+            "name": "county",
+            "in": "query",
+            "description": "County code from `/fire-dispatch/counties` (for example, `tainan`).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "description": "Exact local date of `first_seen_at` in Asia/Taipei (YYYY-MM-DD).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "description": "Inclusive local date lower bound on `first_seen_at` in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "Inclusive local date upper bound on `first_seen_at` in Asia/Taipei (YYYY-MM-DD). Ignored when `date` is set.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 500,
+              "maximum": 5000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stored case states, newest first_seen_at first. The crawler stores `/fire-dispatch/latest` every minute; each status or unit change of a case is a separate record.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FireDispatchRecord"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown county code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/fuel-prices": {
       "get": {
         "tags": [
@@ -1585,6 +1682,83 @@
           }
         }
       },
+      "FireDispatchRecord": {
+        "type": "object",
+        "description": "One stored state of a case: a new record each time a case's status or unit changes.",
+        "required": [
+          "id",
+          "county",
+          "category",
+          "location",
+          "first_seen_at",
+          "last_seen_at"
+        ],
+        "properties": {
+          "case_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "category": {
+            "type": "string"
+          },
+          "county": {
+            "type": "string",
+            "description": "County code (for example, `tainan`)."
+          },
+          "first_seen_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the crawler first saw this state."
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "last_seen_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the crawler last saw this state in the live list."
+          },
+          "latitude": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "location": {
+            "type": "string"
+          },
+          "longitude": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "received_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "Invoice": {
         "type": "object",
         "required": [
@@ -2266,7 +2440,7 @@
     },
     {
       "name": "fire-dispatch",
-      "description": "Live cases from 18 county fire departments' public case lists, grouped by county"
+      "description": "Live cases from 18 county fire departments' public case lists, grouped by county, and their stored history"
     },
     {
       "name": "fuel-prices",

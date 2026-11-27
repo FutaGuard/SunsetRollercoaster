@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::Serialize;
+use sqlx::FromRow;
 use utoipa::ToSchema;
 
 /// One live case from a county fire department's public case list.
@@ -45,4 +46,24 @@ pub struct FireDispatchCounty {
     pub error: Option<String>,
     /// Cases received in the last 6 hours, newest first; cases without `received_at` last.
     pub cases: Vec<FireDispatchCase>,
+}
+
+/// One stored state of a case: a new record each time a case's status or unit changes.
+#[derive(Debug, Clone, Serialize, FromRow, ToSchema)]
+pub struct FireDispatchRecord {
+    pub id: i32,
+    /// County code (for example, `tainan`).
+    pub county: String,
+    pub received_at: Option<DateTime<Utc>>,
+    pub category: String,
+    pub location: String,
+    pub unit: Option<String>,
+    pub status: Option<String>,
+    pub case_id: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    /// When the crawler first saw this state.
+    pub first_seen_at: DateTime<Utc>,
+    /// When the crawler last saw this state in the live list.
+    pub last_seen_at: DateTime<Utc>,
 }

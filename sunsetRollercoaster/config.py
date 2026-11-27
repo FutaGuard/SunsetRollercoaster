@@ -27,9 +27,15 @@ class FinanceConfig(BaseModel):
     exchange_rate_url: str
 
 
+class SunsetApiConfig(BaseModel):
+    # Crawler 從 sunset-api 讀取即時資料的位址，例如 compose 網路內的 http://sunset-api:8081。
+    url: str
+
+
 class Config(BaseModel):
     database: DatabaseConfig
     finance: FinanceConfig | None = None
+    sunset_api: SunsetApiConfig | None = None
 
 
 _CONFIG_PATH = Path(__file__).resolve().parent.parent / "env_config.yml"

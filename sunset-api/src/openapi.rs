@@ -3,9 +3,10 @@ use utoipa::OpenApi;
 use crate::error::ErrorBody;
 use crate::handlers;
 use crate::models::{
-    FinanceExchangeRate, FireDispatchCase, FireDispatchCounty, FireDispatchCountyInfo, Invoice,
-    LiveExchangeRate, NationwideFuelPrice, Reservoir, TaipowerAreaLoad, TaipowerAreaSnapshot,
-    TaipowerFuelMix, TaipowerGenerator, TaipowerOperatingReserve, TaipowerPowerSnapshot,
+    FinanceExchangeRate, FireDispatchCase, FireDispatchCounty, FireDispatchCountyInfo,
+    FireDispatchRecord, Invoice, LiveExchangeRate, NationwideFuelPrice, Reservoir,
+    TaipowerAreaLoad, TaipowerAreaSnapshot, TaipowerFuelMix, TaipowerGenerator,
+    TaipowerOperatingReserve, TaipowerPowerSnapshot,
 };
 
 #[derive(OpenApi)]
@@ -21,6 +22,7 @@ use crate::models::{
         handlers::fire_dispatch::list_counties,
         handlers::fire_dispatch::latest_all,
         handlers::fire_dispatch::latest_county,
+        handlers::fire_dispatch::list_records,
         handlers::fuel_price::list_fuel_prices,
         handlers::fuel_price::latest_fuel_price,
         handlers::fuel_price::get_fuel_price,
@@ -50,6 +52,7 @@ use crate::models::{
         FireDispatchCase,
         FireDispatchCounty,
         FireDispatchCountyInfo,
+        FireDispatchRecord,
         NationwideFuelPrice,
         Invoice,
         Reservoir,
@@ -63,7 +66,7 @@ use crate::models::{
     )),
     tags(
         (name = "finance", description = "Exchange rates from Google Finance; `rate` is the amount of `quote` (TWD) for one unit of `base`"),
-        (name = "fire-dispatch", description = "Live cases from 18 county fire departments' public case lists, grouped by county"),
+        (name = "fire-dispatch", description = "Live cases from 18 county fire departments' public case lists, grouped by county, and their stored history"),
         (name = "fuel-prices", description = "Weekly Taiwan fuel and international crude oil prices"),
         (name = "invoices", description = "Taiwan uniform invoice winning numbers"),
         (name = "reservoirs", description = "Taiwan reservoir water level records"),

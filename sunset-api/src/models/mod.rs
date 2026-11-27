@@ -6,7 +6,9 @@ pub mod reservoir;
 pub mod taipower;
 
 pub use finance::{FinanceExchangeRate, LiveExchangeRate};
-pub use fire_dispatch::{FireDispatchCase, FireDispatchCounty, FireDispatchCountyInfo};
+pub use fire_dispatch::{
+    FireDispatchCase, FireDispatchCounty, FireDispatchCountyInfo, FireDispatchRecord,
+};
 pub use fuel_price::NationwideFuelPrice;
 pub use invoice::Invoice;
 pub use reservoir::Reservoir;
